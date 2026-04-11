@@ -1,0 +1,32 @@
+# Exclude reference PDFs and source docs (internal only — do NOT publish)
+*.pdf
+*.pptx
+*.xlsx
+*.xlsb
+*.msg
+
+# Exclude duplicate/alt background images
+module_transport_bg_2.png
+
+# Exclude alternate Korean reference files (literal brackets, not glob class)
+# Using \[ to escape the [ as literal character
+\[EPC-17-004\]*
+\[2018.04.16\]*
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+desktop.ini
+*.bak
+*.tmp
+*~
+.vscode/
+.idea/
+
+# Python scratch scripts (kept locally in C:\Users\GS\)
+*.py
+__pycache__/
+*.pyc
+
+# Claude settings (optional — keep local)
+.claude/
