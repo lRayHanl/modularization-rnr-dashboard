@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
+    <title>모듈 적용 절차서 — 통합 가이드</title>
+    <script>
+      // Session guard — redirect to portal if not authenticated
+      try {
+        if (sessionStorage.getItem('mod-rnr-auth') !== 'ok') {
+          window.location.href = 'index.html';
+        }
+      } catch(e) { window.location.href = 'index.html'; }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --navy:#0B1426;--deep:#111D35;--ocean:#1B3A6B;
+            --cyan:#00D4FF;--cyan-dim:rgba(0,212,255,0.12);
+            --amber:#FF8C00;--amber-dim:rgba(255,140,0,0.10);
+            --red:#FF4060;--red-dim:rgba(255,64,96,0.10);
+            --green:#34D399;--green-dim:rgba(52,211,153,0.10);
+            --purple:#A78BFA;--purple-dim:rgba(167,139,250,0.10);
+            --surface:#0F1A2E;--card:rgba(17,29,53,0.85);
+            --border:rgba(0,212,255,0.10);
+            --text:#C8D6E5;--text-dim:#6B7FA3;--white:#EDF2F7;
+        }
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Noto Sans KR','Outfit',sans-serif;background:var(--navy);color:var(--text);overflow-x:hidden;}
+        h1,h2,h3,h4,h5{font-family:'Outfit','Noto Sans KR',sans-serif;color:var(--white);}
+        .mono{font-family:'JetBrains Mono',monospace;}
+        .glass{background:var(--card);border:1px solid var(--border);backdrop-filter:blur(20px);border-radius:16px;}
+        .gradient-line{height:2px;background:linear-gradient(90deg,transparent,var(--cyan),var(--amber),transparent);}
+        .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 14px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;}
+        .pill-cyan{background:var(--cyan-dim);color:var(--cyan);border:1px solid rgba(0,212,255,0.2);}
+        .pill-amber{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(255,140,0,0.2);}
+        .pill-red{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,64,96,0.2);}
+        .pill-green{background:var(--green-dim);color:var(--green);border:1px solid rgba(52,211,153,0.2);}
+        .pill-purple{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(167,139,250,0.2);}
+
+        /* NAV */
+        .top-nav{
+            position:sticky;top:0;z-index:100;
+            background:rgba(11,20,38,0.92);backdrop-filter:blur(16px);
+            border-bottom:1px solid var(--border);
+            padding:0 24px;
+        }
+        .top-nav-inner{
+            max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:0;height:56px;
+        }
+        .nav-btn{
+            position:relative;padding:0 20px;height:100%;display:flex;align-items:center;gap:8px;
+            font-size:13px;font-weight:600;color:var(--text-dim);cursor:pointer;
+            border:none;background:none;transition:color .2s;
+        }
+        .nav-btn:hover{color:var(--white);}
+        .nav-btn.active{color:var(--cyan);}
+        .nav-btn.active::after{
+            content:'';position:absolute;bottom:0;left:12px;right:12px;height:2px;
+            background:var(--cyan);border-radius:2px;
+        }
+        .nav-btn .nav-num{
+            font-size:10px;font-weight:800;background:var(--surface);border:1px solid var(--border);
+            padding:2px 7px;border-radius:6px;
+        }
+        .nav-btn.active .nav-num{background:var(--cyan-dim);border-color:rgba(0,212,255,0.3);color:var(--cyan);}
+        .nav-logo{font-size:15px;font-weight:900;color:var(--white);margin-right:24px;letter-spacing:-.5px;white-space:nowrap;}
+
+        /* Page visibility */
+        .page{display:none;}
+        .page.active{display:block;}
+
+        /* ===== PAGE 1 STYLES ===== */
+        .glow-text{text-shadow:0 0 40px rgba(0,212,255,0.3);}
+        .tl-track{height:3px;background:linear-gradient(90deg,var(--ocean),var(--cyan),var(--amber),var(--ocean));border-radius:2px;}
+        .tl-node{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;position:relative;z-index:2;transition:transform .3s;}
+        .tl-node:hover{transform:scale(1.15);}
+        .tl-node-gate{background:linear-gradient(135deg,var(--ocean),#2563EB);border:2px solid var(--cyan);color:var(--cyan);box-shadow:0 0 20px rgba(0,212,255,0.25);}
+        .tl-node-end{background:var(--surface);border:2px solid var(--text-dim);color:var(--text-dim);}
+        .role-card{position:relative;overflow:hidden;}
+        .role-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+        .role-card.rc-blue::before{background:var(--cyan);}
+        .role-card.rc-amber::before{background:var(--amber);}
+        .role-card.rc-mixed::before{background:linear-gradient(90deg,var(--cyan),var(--amber));}
+        .chart-box{position:relative;width:100%;height:340px;border-radius:12px;padding:16px;background:var(--surface);border:1px solid var(--border);}
+        .step-num-s{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--amber),#E65100);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;}
+        .ft-title{color:var(--cyan);font-weight:700;font-size:13px;margin-bottom:10px;letter-spacing:1px;text-transform:uppercase;}
+
+        /* ===== PAGE 2 STYLES ===== */
+        .phase-1{--pc:var(--cyan);--pc-dim:var(--cyan-dim);}
+        .phase-2{--pc:var(--amber);--pc-dim:var(--amber-dim);}
+        .phase-3{--pc:var(--green);--pc-dim:var(--green-dim);}
+        .phase-4{--pc:var(--red);--pc-dim:var(--red-dim);}
+        .step-card{position:relative;overflow:hidden;padding:22px 20px;transition:transform .2s,box-shadow .2s;}
+        .step-card:hover{transform:translateY(-3px);box-shadow:0 8px 30px rgba(0,0,0,0.3);}
+        .step-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--pc);}
+        .step-num-badge{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;background:linear-gradient(135deg,var(--pc),color-mix(in srgb,var(--pc) 60%,#000));}
+        .mdg-banner{position:relative;border:2px solid var(--purple);border-radius:16px;padding:24px 28px;background:linear-gradient(135deg,rgba(167,139,250,0.06),rgba(0,212,255,0.04));margin:12px 0;}
+        .mdg-banner::before{content:'MDG';position:absolute;top:-12px;left:20px;background:var(--purple);color:#fff;font-size:10px;font-weight:800;padding:2px 12px;border-radius:6px;letter-spacing:1px;}
+        .mdg-dot{width:14px;height:14px;border-radius:50%;background:var(--purple);box-shadow:0 0 12px rgba(167,139,250,0.5);flex-shrink:0;}
+        .phase-header{display:flex;align-items:center;gap:14px;padding:16px 24px;border-radius:12px;background:linear-gradient(135deg,color-mix(in srgb,var(--pc) 15%,var(--navy)),var(--navy));border:1px solid color-mix(in srgb,var(--pc) 25%,transparent);margin-bottom:20px;}
+        .phase-header h3{font-size:20px;font-weight:800;color:var(--pc);}
+        .detail-list{font-size:12px;color:var(--text);line-height:1.8;list-style:none;padding:0;}
+        .detail-list li{padding-left:14px;position:relative;}
+        .detail-list li::before{content:'›';position:absolute;left:0;color:var(--pc);font-weight:700;}
+        .steps-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;}
+        .note-box{margin-top:10px;padding:8px 12px;border-radius:8px;background:rgba(167,139,250,0.08);border:1px dashed rgba(167,139,250,0.25);font-size:11px;color:var(--purple);line-height:1.6;}
+
+        @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+        .anim{animation:fadeUp .6s ease-out both;}
+        .anim-d1{animation-delay:.1s;}.anim-d2{animation-delay:.2s;}.anim-d3{animation-delay:.3s;}
+
+        /* ===== PAGE 3: FLOWCHART (WHITE TONE) ===== */
+        #page3{background:#F4F6F9;color:#334155;position:relative;}
+        #page3 h1,#page3 h2,#page3 h3,#page3 h4,#page3 h5{color:#1E293B;}
+        #page3 .p3-header{background:linear-gradient(135deg,#1E3A8A,#2563EB);color:#fff;padding:48px 32px 40px;}
+        #page3 .p3-header h1,#page3 .p3-header p{color:#fff;}
+        .fc-wrap{overflow-x:auto;padding:24px 0;}
+        .fc-board{display:grid;grid-template-columns:220px 240px 480px 220px;gap:14px;min-width:1200px;}
+        .fc-col-header{padding:10px 0;text-align:center;border-radius:8px;font-size:14px;font-weight:800;color:#fff;letter-spacing:.5px;}
+        .fc-col-header.h-blue{background:linear-gradient(135deg,#1E40AF,#2563EB);}
+        .fc-col-header.h-red{background:linear-gradient(135deg,#DC2626,#EF4444);}
+        .fc-col{display:flex;flex-direction:column;gap:10px;}
+        .fc-box{
+            background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:14px 16px;
+            font-size:11px;line-height:1.65;color:#475569;
+            box-shadow:0 1px 3px rgba(0,0,0,0.06);
+        }
+        .fc-box:hover{box-shadow:0 4px 12px rgba(0,0,0,0.08);}
+        .fc-box .fc-title{font-size:13px;font-weight:700;color:#1E293B;margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+        .fc-box .fc-num{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;border-radius:6px;font-size:11px;font-weight:800;color:#fff;padding:0 6px;flex-shrink:0;}
+        .fc-box .fc-note{margin-top:8px;padding:6px 10px;border-radius:6px;background:#EFF6FF;border:1px dashed #93C5FD;font-size:10px;color:#1E40AF;line-height:1.5;}
+        .fc-proposal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+        .fc-proposal-col{display:flex;flex-direction:column;gap:10px;}
+        #page3 .page-switch-btn{background:#1E40AF;color:#fff;border:1px solid #2563EB;}
+        #page3 .page-switch-btn:hover{background:#1E3A8A;}
+        .fc-chief{border:2px dashed #DC2626 !important;background:#fff !important;}
+
+        /* MDG inline insert */
+        .mdg-inline{
+            max-height:0;opacity:0;overflow:hidden;margin-top:0;margin-bottom:0;
+            padding:0 14px;border-radius:12px;
+            background:linear-gradient(135deg,#7C3AED,#6D28D9);
+            border:2px solid #A78BFA;color:#fff;text-align:center;cursor:pointer;
+            box-shadow:0 4px 20px rgba(124,58,237,0.25);
+            transition:max-height 0.7s cubic-bezier(0.4,0,0.2,1),
+                        opacity 0.5s 0.3s ease,
+                        margin-top 0.7s cubic-bezier(0.4,0,0.2,1),
+                        margin-bottom 0.7s cubic-bezier(0.4,0,0.2,1),
+                        padding 0.7s cubic-bezier(0.4,0,0.2,1);
+        }
+        .mdg-open .mdg-inline{
+            max-height:180px;opacity:1;margin-top:10px;margin-bottom:10px;padding:16px 14px;
+        }
+        .mdg-inline:hover{box-shadow:0 8px 30px rgba(124,58,237,0.4);transform:translateY(-2px);}
+        .mdg-inline .mdg-label{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:0.7;}
+        .mdg-inline .mdg-name{font-size:17px;font-weight:900;margin:4px 0;}
+        .mdg-inline .mdg-desc{font-size:10px;line-height:1.5;opacity:0.85;}
+        .mdg-inline .mdg-link{display:inline-block;margin-top:8px;font-size:10px;font-weight:700;background:rgba(255,255,255,0.2);padding:3px 12px;border-radius:6px;}
+
+        /* Toggle button */
+        .mdg-toggle-btn{
+            display:inline-flex;align-items:center;gap:10px;
+            padding:14px 32px;border-radius:12px;font-size:14px;font-weight:700;
+            cursor:pointer;border:2px solid #7C3AED;
+            background:linear-gradient(135deg,#7C3AED,#6D28D9);color:#fff;
+            box-shadow:0 4px 20px rgba(124,58,237,0.3);transition:all 0.3s;
+        }
+        .mdg-toggle-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(124,58,237,0.4);}
+        .mdg-toggle-btn.active{background:#fff;color:#7C3AED;border-color:#7C3AED;}
+        .mdg-toggle-btn .pulse-dot{width:10px;height:10px;border-radius:50%;background:#A78BFA;animation:pulse-glow 2s infinite;}
+        @keyframes pulse-glow{0%,100%{box-shadow:0 0 0 0 rgba(167,139,250,0.6);}50%{box-shadow:0 0 0 8px rgba(167,139,250,0);}}
+        .mdg-toggle-btn.active .pulse-dot{background:#7C3AED;}
+
+        /* Fixed legend */
+            position:fixed;bottom:24px;left:24px;z-index:90;
+            padding:10px 16px;border-radius:10px;
+            background:#fff;border:2px dashed #DC2626;
+            box-shadow:0 4px 16px rgba(0,0,0,0.1);
+            font-size:12px;font-weight:700;color:#DC2626;
+            display:none;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════ NAVIGATION ═══════════════ -->
+<nav class="top-nav">
+    <div class="top-nav-inner">
+        <a href="index.html" style="display:inline-flex;align-items:center;gap:6px;padding:0 16px;height:100%;font-size:13px;font-weight:700;color:#ffb300;text-decoration:none;border:none;background:none;cursor:pointer;">🏠 Portal</a>
+        <span class="nav-logo">Module <span style="color:var(--cyan);">Guide</span></span>
+        <button class="nav-btn active" onclick="showPage('page1',this)" id="nav1">
+            <span class="nav-num">01</span> Module Procedure
+        </button>
+        <button class="nav-btn" onclick="showPage('page2',this)" id="nav2">
+            <span class="nav-num">02</span> Bid Process + MDG
+        </button>
+        <button class="nav-btn" onclick="showPage('page3',this)" id="nav3">
+            <span class="nav-num">03</span> Work Flow
+        </button>
+    </div>
+</nav>
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║                    PAGE 1: MODULE PROCEDURE              ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div id="page1" class="page active">
+
+<header style="background:linear-gradient(160deg,var(--navy) 0%,var(--deep) 50%,var(--ocean) 100%);position:relative;">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 80% 20%,rgba(0,212,255,0.06) 0%,transparent 70%);"></div>
+    <div style="max-width:1200px;margin:0 auto;padding:60px 32px 50px;position:relative;z-index:1;">
+        <div style="display:flex;gap:10px;margin-bottom:20px;">
+            <span class="pill pill-cyan">O&G 입찰 단계</span>
+            <span class="pill pill-amber">Winning Strategy</span>
+        </div>
+        <h1 style="font-size:clamp(2.2rem,5vw,3.6rem);font-weight:900;line-height:1.1;letter-spacing:-1px;" class="glow-text">Module Application<br>Procedure</h1>
+        <p style="margin-top:18px;font-size:17px;color:var(--text-dim);max-width:560px;line-height:1.7;font-weight:300;">
+            모듈화를 단순한 옵션에서 <span style="color:var(--cyan);font-weight:600;">'수주 필승 전략'</span>으로 전환하는 의사결정 프로세스
+        </p>
+        <button class="page-switch-btn" style="margin-top:24px;" onclick="showPage('page2',document.getElementById('nav2'))">
+            입찰 프로세스 + MDG 보기 →
+        </button>
+    </div>
+    <div class="gradient-line"></div>
+</header>
+
+<div style="max-width:1200px;margin:0 auto;padding:48px 24px;">
+
+<!-- MDC R&R -->
+<section class="anim" style="margin-bottom:72px;">
+    <div style="text-align:center;margin-bottom:40px;">
+        <p class="mono pill-cyan pill" style="margin-bottom:12px;">SECTION 01</p>
+        <h2 style="font-size:28px;font-weight:800;">MDC 구성 및 R&R</h2>
+        <p style="color:var(--text-dim);margin-top:8px;font-size:14px;">전문가 그룹의 집단지성을 통한 모듈 적용 범위 및 전략 최종 확정</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;">
+        <!-- Card 1 -->
+        <div class="glass role-card rc-blue anim anim-d1" style="padding:28px;box-shadow:0 0 30px rgba(0,212,255,0.08),inset 0 1px 0 rgba(0,212,255,0.1);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <h4 style="font-size:16px;font-weight:700;">의사결정 리더십</h4>
+                <span class="pill pill-cyan" style="font-size:9px;">MDC CORE</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:20px;">
+                <div style="display:flex;gap:14px;">
+                    <span style="font-size:28px;">👑</span>
+                    <div><h5 style="font-size:14px;font-weight:700;">PD / PM</h5><p style="font-size:11px;color:var(--text-dim);margin-top:2px;">프로젝트 전체 손익 및 수주 전략 총괄</p><ul style="margin-top:8px;padding-left:16px;font-size:12px;line-height:1.8;list-style:disc;"><li>모듈화 전략의 수주 경쟁력 최종 판단</li><li>범조직적 리소스 투입 의사결정</li></ul></div>
+                </div>
+                <div style="height:1px;background:var(--border);"></div>
+                <div style="display:flex;gap:14px;">
+                    <span style="font-size:28px;">📐</span>
+                    <div><h5 style="font-size:14px;font-weight:700;">EM / CM</h5><p style="font-size:11px;color:var(--text-dim);margin-top:2px;">설계 및 시공 기술 타당성 검토</p><ul style="margin-top:8px;padding-left:16px;font-size:12px;line-height:1.8;list-style:disc;"><li>Modular Design 기술적 구현 가능성 검증</li><li>현장 설치 제약 및 공기 단축 효과 분석</li></ul></div>
+                </div>
+            </div>
+        </div>
+        <!-- Card 2 -->
+        <div class="glass role-card rc-mixed anim anim-d2" style="padding:28px;box-shadow:0 0 30px rgba(0,212,255,0.08),inset 0 1px 0 rgba(0,212,255,0.1);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <h4 style="font-size:16px;font-weight:700;">전담 코디네이션</h4>
+                <span class="pill pill-cyan" style="font-size:9px;">MODULE FOCAL</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:20px;">
+                <div style="display:flex;gap:14px;">
+                    <span style="font-size:28px;">🎯</span>
+                    <div><h5 style="font-size:14px;font-weight:700;">Module Manager</h5><p style="font-size:11px;color:var(--text-dim);margin-top:2px;">전 단계 Follow-up 및 MDC 운영</p><ul style="margin-top:8px;padding-left:16px;font-size:12px;line-height:1.8;list-style:disc;"><li>MDG 게이트별 입력 자료 취합 및 검토 지원</li><li>의사결정 기록 관리 및 수주 후 인수인계</li></ul></div>
+                </div>
+                <div style="height:1px;background:var(--border);"></div>
+                <div style="display:flex;gap:14px;">
+                    <span style="font-size:28px;">🚚</span>
+                    <div><h5 style="font-size:14px;font-weight:700;">Logistics Manager</h5><p style="font-size:11px;color:var(--text-dim);margin-top:2px;">물류 경로 및 운송 제약 분석</p><ul style="margin-top:8px;padding-left:16px;font-size:12px;line-height:1.8;list-style:disc;"><li>최대 모듈 사이즈(Envelope) 상한선 도출</li><li>최적 운송 경로 및 물류 원가 산출</li></ul></div>
+                </div>
+            </div>
+        </div>
+        <!-- Card 3 -->
+        <div class="glass role-card rc-amber anim anim-d3" style="padding:28px;box-shadow:0 0 30px rgba(255,140,0,0.08),inset 0 1px 0 rgba(255,140,0,0.1);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <h4 style="font-size:16px;font-weight:700;">원가 및 조달 전략</h4>
+                <span class="pill pill-amber" style="font-size:9px;">EXECUTION PLAN</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:20px;">
+                <div style="display:flex;gap:14px;">
+                    <span style="font-size:28px;">💰</span>
+                    <div><h5 style="font-size:14px;font-weight:700;">Estimation Team</h5><p style="font-size:11px;color:var(--text-dim);margin-top:2px;">모듈 적용 원가 산출 및 비교</p><ul style="margin-top:8px;padding-left:16px;font-size:12px;line-height:1.8;list-style:disc;"><li>현장 작업 시간 전환(Shift)에 따른 비용 분석</li><li>모듈 제작 ITB 발송 및 제작사 견적 검토</li></ul></div>
+                </div>
+                <div style="height:1px;background:var(--border);"></div>
+                <div style="display:flex;gap:14px;">
+                    <span style="font-size:28px;">🏭</span>
+                    <div><h5 style="font-size:14px;font-weight:700;">Procurement / Yard</h5><p style="font-size:11px;color:var(--text-dim);margin-top:2px;">외주 전략 및 야드 수급</p><ul style="margin-top:8px;padding-left:16px;font-size:12px;line-height:1.8;list-style:disc;"><li>모듈 야드 후보지 발굴 및 가용성 확인</li><li>핵심 기자재 납기 영향도 분석</li></ul></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- TIMELINE -->
+<section class="glass anim" style="padding:48px 32px 56px;margin-bottom:72px;">
+    <div style="text-align:center;margin-bottom:48px;">
+        <p class="mono pill-cyan pill" style="margin-bottom:12px;">SECTION 02</p>
+        <h2 style="font-size:28px;font-weight:800;">MDG 타임라인</h2>
+        <p style="color:var(--text-dim);margin-top:8px;font-size:14px;">입찰 프로세스 주요 마일스톤과 연계된 모듈 의사결정 시점</p>
+    </div>
+    <div style="position:relative;padding:0 24px;">
+        <div class="tl-track" style="position:absolute;top:26px;left:48px;right:48px;"></div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;position:relative;">
+            <div style="display:flex;flex-direction:column;align-items:center;"><div class="tl-node tl-node-end">W0</div><div style="margin-top:16px;text-align:center;"><p style="font-weight:700;font-size:13px;color:var(--white);">Brief 접수</p><p style="font-size:10px;color:var(--text-dim);margin-top:2px;">Trigger</p></div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;"><div class="tl-node tl-node-gate">G1</div><div style="margin-top:16px;text-align:center;"><p style="font-weight:700;font-size:13px;color:var(--cyan);">MDG 1</p><p class="pill pill-cyan" style="margin-top:6px;font-size:9px;">적용 여부 확정</p></div><div class="glass" style="margin-top:12px;padding:10px 14px;font-size:10px;color:var(--text-dim);line-height:1.5;text-align:center;max-width:150px;">"할지 말지" 결정<br>Winning Strategy 수립</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;"><div class="tl-node tl-node-gate">G2</div><div style="margin-top:16px;text-align:center;"><p style="font-weight:700;font-size:13px;color:var(--cyan);">MDG 2</p><p class="pill pill-cyan" style="margin-top:6px;font-size:9px;">전략 및 견적 정렬</p></div><div class="glass" style="margin-top:12px;padding:10px 14px;font-size:10px;color:var(--text-dim);line-height:1.5;text-align:center;max-width:150px;">WBS 분할 및<br>외주/ITB 계획 확정</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;"><div class="tl-node tl-node-gate">G3</div><div style="margin-top:16px;text-align:center;"><p style="font-weight:700;font-size:13px;color:var(--cyan);">MDG 3</p><p class="pill pill-cyan" style="margin-top:6px;font-size:9px;">상세 FS 최종화</p></div><div class="glass" style="margin-top:12px;padding:10px 14px;font-size:10px;color:var(--text-dim);line-height:1.5;text-align:center;max-width:150px;">Viability 검증 및<br>최적 적용안 도출</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;"><div class="tl-node tl-node-end">Fin</div><div style="margin-top:16px;text-align:center;"><p style="font-weight:700;font-size:13px;color:var(--white);">Cost Review</p><p style="font-size:10px;color:var(--text-dim);margin-top:2px;">입찰 제안서 반영</p></div></div>
+        </div>
+    </div>
+</section>
+
+<!-- GATE DEEP DIVES -->
+<section style="margin-bottom:72px;">
+    <div style="text-align:center;margin-bottom:40px;">
+        <p class="mono pill-amber pill" style="margin-bottom:12px;">SECTION 03</p>
+        <h2 style="font-size:28px;font-weight:800;">Gate별 상세 분석</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:24px;">
+        <div class="glass anim anim-d1" style="padding:28px;" id="p1-mdg1">
+            <h3 style="font-size:20px;font-weight:800;margin-bottom:8px;"><span style="color:var(--cyan);">Gate 1</span> · 수주 전략 수립</h3>
+            <p style="font-size:13px;color:var(--text-dim);line-height:1.7;margin-bottom:20px;">발주처 요구사항과 현지 제약을 분석하여 모듈화가 실질적인 <span style="color:var(--amber);font-weight:600;">경쟁 우위</span>를 제공하는지 평가합니다.</p>
+            <div class="chart-box"><canvas id="gate1RadarChart"></canvas></div>
+        </div>
+        <div class="glass anim anim-d2" style="padding:28px;" id="p1-mdg2">
+            <h3 style="font-size:20px;font-weight:800;margin-bottom:8px;"><span style="color:var(--cyan);">Gate 2</span> · 견적 및 조직 정렬</h3>
+            <p style="font-size:13px;color:var(--text-dim);line-height:1.7;margin-bottom:20px;">설계·조달·시공 조직 간 <span style="color:var(--amber);font-weight:600;">Cost 산정 기준을 통일</span>하고 외주 ITB 계획을 수립합니다.</p>
+            <div class="chart-box"><canvas id="gate2BarChart"></canvas></div>
+        </div>
+    </div>
+</section>
+
+<!-- GATE 3 -->
+<section class="glass anim" style="padding:40px 32px;margin-bottom:72px;border:1px solid rgba(255,140,0,0.15);" id="p1-mdg3">
+    <div style="display:grid;grid-template-columns:1fr 1.8fr;gap:40px;align-items:center;">
+        <div>
+            <span class="pill pill-amber" style="margin-bottom:14px;">OPTIMIZATION</span>
+            <h3 style="font-size:26px;font-weight:800;margin-top:10px;margin-bottom:14px;">Gate 3: 최적화 검증</h3>
+            <p style="font-size:13px;color:var(--text-dim);line-height:1.8;">물리적 제약(물류 경로, 야드 능력)과 원가 효율을 반복 검토하여 최적의 모듈 적용 범위를 확정합니다.</p>
+            <div style="margin-top:24px;display:flex;flex-direction:column;gap:12px;">
+                <div style="display:flex;align-items:center;gap:12px;"><div class="step-num-s">01</div><span style="font-size:13px;">Digital Site Survey 데이터 반영</span></div>
+                <div style="display:flex;align-items:center;gap:12px;"><div class="step-num-s">02</div><span style="font-size:13px;">물류 경로 장애물/상한선 업데이트</span></div>
+                <div style="display:flex;align-items:center;gap:12px;"><div class="step-num-s">03</div><span style="font-size:13px;">제작사 Viability 최종 확인</span></div>
+            </div>
+        </div>
+        <div class="chart-box"><canvas id="gate3ScatterChart"></canvas></div>
+    </div>
+</section>
+
+<!-- FOOTER P1 -->
+<footer style="border-top:1px solid var(--border);padding:48px 0 32px;">
+    <div style="max-width:1200px;margin:0 auto;padding:0 24px;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:32px;">
+            <div><p class="ft-title">의사결정 기록 (Audit)</p><p style="font-size:12px;color:var(--text-dim);line-height:1.7;">각 Gate별 결정 사항은 MDG 회의록에 기록되어야 하며, 변경 시 MDC 재소집을 통해 승인합니다.</p></div>
+            <div><p class="ft-title">변경 관리 (Change)</p><p style="font-size:12px;color:var(--text-dim);line-height:1.7;">부지 조건, 공기 등 주요 가정 변경 시 즉시 영향도를 분석하여 모듈 전략을 업데이트합니다.</p></div>
+            <div><p class="ft-title">인수인계 (Handover)</p><p style="font-size:12px;color:var(--text-dim);line-height:1.7;">수주 후 FEED/EPC 실행 조직으로 모듈 전략 패키지를 인계합니다.</p></div>
+        </div>
+        <div style="text-align:center;margin-top:40px;">
+            <button class="page-switch-btn" onclick="showPage('page2',document.getElementById('nav2'))">다음: 입찰 프로세스 + MDG 매핑 →</button>
+        </div>
+    </div>
+</footer>
+
+</div><!-- end page1 content wrapper -->
+</div><!-- end #page1 -->
+
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║              PAGE 2: BID PROCESS + MDG                   ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div id="page2" class="page">
+
+<header style="background:linear-gradient(160deg,var(--navy) 0%,var(--deep) 50%,var(--ocean) 100%);position:relative;">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 80% 20%,rgba(0,212,255,0.06) 0%,transparent 70%);"></div>
+    <div style="max-width:1200px;margin:0 auto;padding:60px 32px 50px;position:relative;z-index:1;">
+        <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+            <span class="pill pill-cyan">O&G Proposal</span>
+            <span class="pill pill-amber">19-Step Process</span>
+            <span class="pill pill-purple">MDG Mapped</span>
+        </div>
+        <h1 style="font-size:clamp(2rem,5vw,3.4rem);font-weight:900;line-height:1.1;letter-spacing:-1px;" class="glow-text">입찰 프로세스 절차서<br><span style="color:var(--cyan);">+ MDG 매핑</span></h1>
+        <p style="margin-top:18px;font-size:16px;color:var(--text-dim);max-width:600px;line-height:1.7;font-weight:300;">
+            ITB 접수부터 입찰 결과 보고까지 19단계 전체 프로세스에 <span style="color:var(--purple);font-weight:600;">Module Decision Gate(MDG)</span>를 매핑한 통합 절차서
+        </p>
+        <button class="page-switch-btn" style="margin-top:24px;" onclick="showPage('page1',document.getElementById('nav1'))">← Module Procedure 보기</button>
+    </div>
+    <div class="gradient-line"></div>
+</header>
+
+<div style="max-width:1200px;margin:0 auto;padding:48px 24px;">
+
+<!-- LEGEND -->
+<section class="glass anim" style="padding:24px 28px;margin-bottom:48px;">
+    <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
+        <span style="font-size:13px;font-weight:700;color:var(--white);">Phase 구분:</span>
+        <div style="display:flex;align-items:center;gap:8px;"><span style="width:12px;height:12px;border-radius:3px;background:var(--cyan);"></span><span style="font-size:12px;">입찰검토</span></div>
+        <div style="display:flex;align-items:center;gap:8px;"><span style="width:12px;height:12px;border-radius:3px;background:var(--amber);"></span><span style="font-size:12px;">영업심의 & 전략수립</span></div>
+        <div style="display:flex;align-items:center;gap:8px;"><span style="width:12px;height:12px;border-radius:3px;background:var(--green);"></span><span style="font-size:12px;">Proposal 진행</span></div>
+        <div style="display:flex;align-items:center;gap:8px;"><span style="width:12px;height:12px;border-radius:3px;background:var(--red);"></span><span style="font-size:12px;">입찰심의</span></div>
+        <div style="display:flex;align-items:center;gap:8px;"><span class="mdg-dot" style="width:12px;height:12px;"></span><span style="font-size:12px;color:var(--purple);font-weight:600;">MDG Gate</span></div>
+    </div>
+</section>
+
+<!-- PHASE 1 -->
+<section class="phase-1 anim" style="margin-bottom:56px;">
+    <div class="phase-header"><span class="mono" style="font-size:12px;color:var(--pc);opacity:.6;">PHASE 01</span><h3>입찰검토</h3></div>
+    <div class="steps-grid">
+        <div class="glass step-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><div class="step-num-badge">01</div><div><h4 style="font-size:15px;font-weight:700;">ITB 접수 & 검토의뢰</h4><p style="font-size:10px;color:var(--text-dim);margin-top:2px;">Trigger</p></div></div><ul class="detail-list"><li>시기: 즉시</li><li>주관: 플랜트영업팀장</li><li>목적: PJT Risk 및 Winning Strategy 검토 의뢰</li><li>대상: 직무별 Specialist</li></ul></div>
+        <div class="glass step-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><div class="step-num-badge">02</div><div><h4 style="font-size:15px;font-weight:700;">PJT Risk & Winning Strategy 회의</h4><p style="font-size:10px;color:var(--text-dim);margin-top:2px;">본부장 주관 회의</p></div></div><ul class="detail-list"><li>시기: ITB 검토 의뢰 + 1주 內</li><li>주관: 플랜트영업팀장</li><li>목적: PJT Risk 사항 검토 및 Winning Strategy 도출</li></ul></div>
+    </div>
+
+    <!-- MDG 1: Step 2 → Step 3 -->
+    <div class="mdg-banner anim" style="margin:20px 0;">
+        <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:260px;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><span class="mdg-dot"></span><h3 style="font-size:22px;font-weight:800;color:var(--purple);">MDG 1 — 모듈 적용 여부 확정</h3></div>
+                <p style="font-size:13px;color:var(--text-dim);line-height:1.7;">PJT Risk & Winning Strategy 회의(Step 2) 결과를 토대로, <strong style="color:var(--white);">모듈화가 수주 경쟁력에 기여하는지</strong> 최초 판단합니다.</p>
+                <div style="margin-top:12px;font-size:12px;color:var(--purple);"><strong>위치:</strong> Step 2 → Step 3 사이 &nbsp;|&nbsp; <strong>의사결정:</strong> "모듈화 할지 말지" Go/No-Go</div>
+            </div>
+            <div class="glass" style="padding:16px 20px;min-width:200px;">
+                <p style="font-size:11px;font-weight:700;color:var(--purple);margin-bottom:8px;">핵심 체크리스트</p>
+                <ul class="detail-list" style="--pc:var(--purple);"><li>발주처 모듈화 요구 여부</li><li>현지 노무 환경 분석</li><li>물류 경로 초기 타당성</li><li>Winning Point로서의 가치</li></ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="steps-grid">
+        <div class="glass step-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><div class="step-num-badge">03</div><div><h4 style="font-size:15px;font-weight:700;">유관부서 검토의견 요청</h4><p style="font-size:10px;color:var(--text-dim);margin-top:2px;">D-7 사전검토</p></div></div><ul class="detail-list"><li>시기: 본부심의 D-7</li><li>주관: RM2팀/기획팀</li><li>검토 부서: 첨부#1 참조</li><li>목적: 주요 Risk 사항 검토 등</li></ul></div>
+    </div>
+</section>
+
+<!-- PHASE 2 -->
+<section class="phase-2 anim" style="margin-bottom:56px;">
+    <div class="phase-header"><span class="mono" style="font-size:12px;color:var(--pc);opacity:.6;">PHASE 02</span><h3>영업심의 & 전략수립</h3></div>
+    <div class="steps-grid">
+        <div class="glass step-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><div class="step-num-badge">04</div><div><h4 style="font-size:15px;font-weight:700;">본부영업심의</h4><p style="font-size:10px;color:var(--text-dim);margin-top:2px;">매주 화 / 전사 커미티 D-7</p></div></div><ul class="detail-list"><li>시기: ITB 접수 + 2주 內 (매주 화)</li><li>주관: 플랜트영업팀장</li><li>목적: 입찰 참여 여부 의사결정</li><li>내용: PJT 관련 상세사항, 입찰참여구도</li><li>PJT Risk & Winning Strategy 회의 결과 반영</li><li>입찰 비용 편성 및 요인</li></ul><div class="note-box">※ 본부 심의 후, 본부 內 유관부서 검토 의견 송부 (전사커미티 D-6日)<br>(기획 → RM2팀, 토신지, 첨부#1 참조)</div></div>
+        <div class="glass step-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><div class="step-num-badge">05</div><div><h4 style="font-size:15px;font-weight:700;">전사 커미티 (사전심의)</h4><p style="font-size:10px;color:var(--text-dim);margin-top:2px;">해당時</p></div></div><ul class="detail-list"><li>시기: 본부영업심의 차주 월요일</li><li>보고: 해당 부문장/팀장</li><li>목적: 입찰참여 의사결정</li></ul></div>
+        <div class="glass step-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><div class="step-num-badge">06</div><div><h4 style="font-size:15px;font-weight:700;">KOM & ITB 공유회</h4><p style="font-size:10px;color:var(--text-dim);margin-top:2px;">Kick-off Meeting</p></div></div><ul class="detail-list"><li>시기: 본부영업심의 후 2주 內</li><li>주관: Pro-PD</li><li>목적: 공종별 ITB 상세 검토 및 Risk 사항 1차 Check & FU</li><li>프로젝트 개요 / 공정개요 / SOW</li><li>ITB상 주요 Risk / 입찰 Schedule</li></ul></div>
+        <div class="glass step-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><div class="step-num-badge">07</div><div><h4 style="font-size:15px;font-weight:700;">입찰 전략 및 금액 산출 방안 보고</h4><p style="font-size:10px;color:var(--text-dim);margin-top:2px;">전략 보고</p></div></div><ul class="detail-list"><li>시기: ITB 공유회 후 2주 內</li><li>보고: Pro-PD</li><li>목적: 입찰 전략 및 금액 산출 방안 보고</li><li>영업전략: 플랜트영업팀장</li><li>입찰전략: Pro-PD, EM/PPM/CM</li><li>Cost 산출방안: 견적1/2팀장</li></ul></div>
+    </div>
+</section>
+
+<!-- PHASE 3 -->
+<section class="phase-3 anim" style="margin-bottom:56px;">
+    <div class="phase-header"><span class="mono" style="font-size:12px;color:var(--pc);opacity:.6;">PHASE 03</span><h3>Proposal 진행</h3><span class="pill pill-green" style="font-size:9px;margin-left:auto;">※ Parallel 진행</span></div>
+    <div class="steps-grid">
+        <div class="glass step-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><div class="step-num-badge">08</div><div><h4 style="font-size:15px;font-weight:700;">공사건적방안 회의</h4><p style="font-size:10px;color:var(--text-dim);margin-top:2px;">ITB 공유 후 4주 內</p></div></div><ul class="detail-list"><li>시기: ITB 공유 후 4주 內 (견적요청 1주 前)</li><li>주관: Pro-PD/CM</li><li>목적: 견적 요청 업체 확정, Subcon. Plan 확정</li><li>본사/시공법인 R&R 확정</li></ul></div>
+    </div>
+
+    <!-- MDG 2 (Subcontracting Case): Step 8 → Step 9-1 -->
+    <div class="mdg-banner anim" style="margin:20px 0;">
+        <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:260px;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><span class="mdg-dot"></span><h3 style="font-size:22px;font-weight:800;color:var(--purple);">MDG 2 — Subcontracting Case</h3></div>
+                <p style="font-size:13px;color:var(--text-dim);line-height:1.7;">공사건적방안 회의(Step 8) 완료 후, <strong style="color:var(--white);">외주(Subcon) 기반 모듈 제작 전략의 WBS 분할 및 ITB 계획</strong>을 확정합니다.</p>
+                <div style="margin-top:12px;font-size:12px;color:var(--purple);"><strong>위치:</strong> Step 8 → Step 9-1 사이 &nbsp;|&nbsp; <strong>의사결정:</strong> Subcon 모듈 범위 확정 & ITB 발송 승인</div>
+            </div>
+            <div class="glass" style="padding:16px 20px;min-width:200px;">
+                <p style="font-size:11px;font-weight:700;color:var(--purple);margin-bottom:8px;">핵심 체크리스트</p>
+                <ul class="detail-list" style="--pc:var(--purple);"><li>WBS 모듈/현장 분할 확정</li><li>야드 후보지 가용성 확인</li><li>모듈 제작 ITB 발송 계획</li><li>On-site ↔ Off-site 원가 비교</li></ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="steps-grid">
+        <div class="glass step-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><div class="step-num-badge" style="font-size:11px;">9-1</div><div><h4 style="font-size:15px;font-weight:700;">PKG BM 확인 회의</h4><p style="font-size:10px;color:var(--text-dim);margin-top:2px;">RFQ Issue 前</p></div></div><ul class="detail-list"><li>시기: RFQ Issue 前 (1차) 및 Final BM Issue 약 1개월 前 (2차)</li><li>주관: Pro-PD</li><li>목적: Package Item 內 Bulk Items SOW 및 MTO 기준 확정</li></ul></div>
+    </div>
+
+    <!-- MDG 2 (PO Case): Step 9-1 → Step 9-2 -->
+    <div class="mdg-banner anim" style="margin:20px 0;">
+        <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:260px;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><span class="mdg-dot"></span><h3 style="font-size:22px;font-weight:800;color:var(--purple);">MDG 2 — PO Case</h3></div>
+                <p style="font-size:13px;color:var(--text-dim);line-height:1.7;">PKG BM 확인 회의(Step 9-1) 완료 후, <strong style="color:var(--white);">PO(Purchase Order) 기반 모듈 조달 전략</strong>의 BM/BQ 기준을 확정합니다.</p>
+                <div style="margin-top:12px;font-size:12px;color:var(--purple);"><strong>위치:</strong> Step 9-1 → Step 9-2 사이 &nbsp;|&nbsp; <strong>의사결정:</strong> PO 모듈 범위 확정</div>
+            </div>
+            <div class="glass" style="padding:16px 20px;min-width:200px;">
+                <p style="font-size:11px;font-weight:700;color:var(--purple);margin-bottom:8px;">핵심 체크리스트</p>
+                <ul class="detail-list" style="--pc:var(--purple);"><li>Package BM 기준 확정</li><li>모듈 조달 SOW 명확화</li><li>MTO 기준 정립</li><li>납기 영향도 분석</li></ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="steps-grid">
+        <div class="glass step-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><div class="step-num-badge" style="font-size:11px;">9-2</div><div><h4 style="font-size:15px;font-weight:700;">BM/BQ Review 회의</h4><p style="font-size:10px;color:var(--text-dim);margin-top:2px;">BM 산출 후</p></div></div><ul class="detail-list"><li>시기: 1차 - 1차 BM 산출 後, 2차 - BM 산출 후 2개월 後</li><li>주관: 1차 - 각 설계 팀장 (자체)</li><li>목적: BM/BQ 적정성 검토</li></ul></div>
+        <div class="glass step-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><div class="step-num-badge">10</div><div><h4 style="font-size:15px;font-weight:700;">EPC Schedule 적정성 검토회의</h4><p style="font-size:10px;color:var(--text-dim);margin-top:2px;">사업수행계획보고 2주 前</p></div></div><ul class="detail-list"><li>시기: 사업수행계획보고 2주 前</li><li>보고: 플랜트 O&S사업팀장</li><li>목적: 글로벌 가능한 SCH 협의 도출</li></ul></div>
+        <div class="glass step-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><div class="step-num-badge">11</div><div><h4 style="font-size:15px;font-weight:700;">Risk Review 회의</h4><p style="font-size:10px;color:var(--text-dim);margin-top:2px;">3단계 진행</p></div></div><ul class="detail-list"><li>1차: KOM & ITB 공유회시 도출</li><li>2차: BM 산출 後 (Risk Review TF + Risk Specialist)</li><li>3차: 발주처 Clarification 완료 後 (본부장 보고)</li><li>주관: Pro-PD</li><li>목적: Risk 도출 및 대응 방안 수립</li></ul></div>
+        <div class="glass step-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><div class="step-num-badge">12</div><div><h4 style="font-size:15px;font-weight:700;">사업수행계획보고</h4><p style="font-size:10px;color:var(--text-dim);margin-top:2px;">본부입찰심의 2주 前</p></div></div><ul class="detail-list"><li>보고: Pro-PD, EM, PPM, CM or PM</li><li>목적: 입찰 원가 산정기준 적정성 사전 검증</li><li>EPC Schedule / HO·SO 조직도 (by Pro-PD)</li><li>사업 및 EPC 계약 주요 리스크</li><li>설계수행구도/계획 (by EM)</li><li>구매/물류/검사 수행계획 (by PPM)</li><li>공사출당 소화 계획 및 Sub-con Plan (by CM)</li></ul></div>
+        <div class="glass step-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><div class="step-num-badge">13</div><div><h4 style="font-size:15px;font-weight:700;">Cost Review 회의</h4><p style="font-size:10px;color:var(--text-dim);margin-top:2px;">Cost 산출 즉시</p></div></div><ul class="detail-list"><li>시기: 사업수행계획보고 후 Cost 산출 즉시</li><li>주관: 플랜트견적팀 (by건적L/E)</li><li>목적: 잔출원가의 적정성 검토</li><li>대상: 공사비, 기자재비, 경상비</li><li>※ 알짜TF FM 및 유관부서 참석하여 Review</li></ul></div>
+    </div>
+
+    <!-- MDG 3: after Step 13 -->
+    <div class="mdg-banner anim" style="margin:20px 0;">
+        <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:260px;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><span class="mdg-dot"></span><h3 style="font-size:22px;font-weight:800;color:var(--purple);">MDG 3 — 상세 Feasibility 최종화</h3></div>
+                <p style="font-size:13px;color:var(--text-dim);line-height:1.7;">Cost Review(Step 13) 완료 후, <strong style="color:var(--white);">모듈화 최적 적용 범위를 최종 확정</strong>하고 입찰 제안서에 반영합니다.</p>
+                <div style="margin-top:12px;font-size:12px;color:var(--purple);"><strong>위치:</strong> Step 13 뒤 &nbsp;|&nbsp; <strong>의사결정:</strong> 최종 모듈 범위 및 원가 Lock-in</div>
+            </div>
+            <div class="glass" style="padding:16px 20px;min-width:200px;">
+                <p style="font-size:11px;font-weight:700;color:var(--purple);margin-bottom:8px;">핵심 체크리스트</p>
+                <ul class="detail-list" style="--pc:var(--purple);"><li>Digital Site Survey 반영 완료</li><li>물류 상한선 최종 확인</li><li>제작사 Viability 검증</li><li>모듈 원가 vs Stick-built 최종 비교</li><li>제안서 반영 전략 확정</li></ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- PHASE 4 -->
+<section class="phase-4 anim" style="margin-bottom:56px;">
+    <div class="phase-header"><span class="mono" style="font-size:12px;color:var(--pc);opacity:.6;">PHASE 04</span><h3>입찰심의</h3></div>
+    <div class="steps-grid">
+        <div class="glass step-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><div class="step-num-badge">14</div><div><h4 style="font-size:15px;font-weight:700;">유관부서 검토의견 요청</h4><p style="font-size:10px;color:var(--text-dim);margin-top:2px;">본부심의 D-7</p></div></div><ul class="detail-list"><li>시기: 본부심의 D-7</li><li>주관: RM2팀/기획팀</li><li>검토 부서: 첨부#1 참조</li><li>목적: 입찰가/공기 적정성 검토</li></ul></div>
+        <div class="glass step-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><div class="step-num-badge">15</div><div><h4 style="font-size:15px;font-weight:700;">심의시행 알림 및 유관부서의견 요청</h4><p style="font-size:10px;color:var(--text-dim);margin-top:2px;">본부심의 D-3</p></div></div><ul class="detail-list"><li>시기: 본부 심의 D-3</li><li>주관: 플랜트 O&S사업팀</li><li>목적: 심의 자료 공유 및 유관부서 의견 요청</li></ul></div>
+        <div class="glass step-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><div class="step-num-badge">16</div><div><h4 style="font-size:15px;font-weight:700;">본부입찰심의</h4><p style="font-size:10px;color:var(--text-dim);margin-top:2px;">매주 화 / 전사 커미티 D-7</p></div></div><ul class="detail-list"><li>시기: 매주 화요일 (전사 커미티 D-7日 전)</li><li>보고: Pro-PD</li><li>목적: 최종 입찰의 의사결정</li></ul><div class="note-box">※ 본부 심의 후, 본부 內 유관부서 검토 의견 송부 (전사커미티 D-6日)</div></div>
+        <div class="glass step-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><div class="step-num-badge">17</div><div><h4 style="font-size:15px;font-weight:700;">전사 커미티 (사전심의)</h4><p style="font-size:10px;color:var(--text-dim);margin-top:2px;">해당時</p></div></div><ul class="detail-list"><li>시기: 부입찰심의 차주 월요일</li><li>보고: 해당 부문장/팀장</li><li>목적: 입찰참여 의사결정</li></ul></div>
+        <div class="glass step-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><div class="step-num-badge">18</div><div><h4 style="font-size:15px;font-weight:700;">CEO 보고</h4><p style="font-size:10px;color:var(--text-dim);margin-top:2px;">전사 커미티 당일 or +1日</p></div></div><ul class="detail-list"><li>시기: 전사 커미티 당일 or +1日</li><li>보고: RM실장</li><li>목적: 커미티 논의 결과 보고 및 최종투찰 금액 보고</li></ul></div>
+        <div class="glass step-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><div class="step-num-badge">19</div><div><h4 style="font-size:15px;font-weight:700;">입찰결과보고</h4><p style="font-size:10px;color:var(--text-dim);margin-top:2px;">결과 발표 후 즉시</p></div></div><ul class="detail-list"><li>시기: 입찰결과 발표 후 즉시</li><li>주관: Pro-PD</li><li>목적: 입찰 결과 분석, 경쟁사 비교 분석</li></ul></div>
+    </div>
+</section>
+
+<!-- MDG SUMMARY -->
+<section class="glass anim" style="padding:40px 32px;margin-bottom:56px;">
+    <div style="text-align:center;margin-bottom:32px;">
+        <p class="mono pill-purple pill" style="margin-bottom:12px;">OVERVIEW</p>
+        <h2 style="font-size:26px;font-weight:800;">전체 프로세스 × MDG 매핑 요약</h2>
+    </div>
+    <div style="position:relative;overflow-x:auto;padding:20px 0;">
+        <div style="display:flex;align-items:stretch;min-width:900px;gap:4px;">
+            <div style="flex:3;background:var(--cyan-dim);border:1px solid rgba(0,212,255,0.2);border-radius:12px 0 0 12px;padding:16px;text-align:center;position:relative;"><p style="font-size:11px;font-weight:700;color:var(--cyan);">입찰검토</p><p class="mono" style="font-size:20px;font-weight:800;color:var(--white);margin:8px 0;">1 → 3</p><span style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);background:var(--purple);color:#fff;font-size:9px;font-weight:800;padding:2px 8px;border-radius:4px;">MDG 1</span></div>
+            <div style="flex:4;background:var(--amber-dim);border:1px solid rgba(255,140,0,0.2);padding:16px;text-align:center;"><p style="font-size:11px;font-weight:700;color:var(--amber);">영업심의 & 전략수립</p><p class="mono" style="font-size:20px;font-weight:800;color:var(--white);margin:8px 0;">4 → 7</p></div>
+            <div style="flex:7;background:var(--green-dim);border:1px solid rgba(52,211,153,0.2);padding:16px;text-align:center;position:relative;"><p style="font-size:11px;font-weight:700;color:var(--green);">Proposal 진행</p><p class="mono" style="font-size:20px;font-weight:800;color:var(--white);margin:8px 0;">8 → 13</p><span style="position:absolute;bottom:6px;left:30%;transform:translateX(-50%);background:var(--purple);color:#fff;font-size:9px;font-weight:800;padding:2px 8px;border-radius:4px;">MDG 2</span><span style="position:absolute;bottom:6px;left:70%;transform:translateX(-50%);background:var(--purple);color:#fff;font-size:9px;font-weight:800;padding:2px 8px;border-radius:4px;">MDG 3</span></div>
+            <div style="flex:5;background:var(--red-dim);border:1px solid rgba(255,64,96,0.2);border-radius:0 12px 12px 0;padding:16px;text-align:center;"><p style="font-size:11px;font-weight:700;color:var(--red);">입찰심의</p><p class="mono" style="font-size:20px;font-weight:800;color:var(--white);margin:8px 0;">14 → 19</p></div>
+        </div>
+    </div>
+    <div style="margin-top:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
+        <div class="glass" style="padding:16px 20px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span class="mdg-dot"></span><span style="font-size:13px;font-weight:700;color:var(--purple);">MDG 1</span></div><p style="font-size:12px;color:var(--text-dim);line-height:1.6;">Step 2↔3 사이 · "모듈화 Go/No-Go" · Winning Strategy 내 모듈 포지셔닝 결정</p></div>
+        <div class="glass" style="padding:16px 20px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span class="mdg-dot"></span><span style="font-size:13px;font-weight:700;color:var(--purple);">MDG 2</span></div><p style="font-size:12px;color:var(--text-dim);line-height:1.6;">SC Case: Step 8↔9-1 사이 · PO Case: Step 9-1↔9-2 사이 · 모듈 ITB/조달 전략 확정</p></div>
+        <div class="glass" style="padding:16px 20px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span class="mdg-dot"></span><span style="font-size:13px;font-weight:700;color:var(--purple);">MDG 3</span></div><p style="font-size:12px;color:var(--text-dim);line-height:1.6;">Step 13 뒤 · 최종 Viability 확인 · 입찰 제안서 모듈 전략 반영 확정</p></div>
+    </div>
+</section>
+
+<!-- FOOTER P2 -->
+<footer style="border-top:1px solid var(--border);padding:40px 0 28px;">
+    <div style="max-width:1200px;margin:0 auto;padding:0 24px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
+            <p style="font-size:11px;color:var(--text-dim);">* HO: Home Office / SO: Site Office</p>
+            <button class="page-switch-btn" onclick="showPage('page1',document.getElementById('nav1'))">← Module Procedure 보기</button>
+        </div>
+        <p style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">© 2025 O&G Proposal Process + MDG Integration</p>
+    </div>
+</footer>
+
+</div><!-- end page2 content wrapper -->
+</div><!-- end #page2 -->
+
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║           PAGE 3: PROPOSAL WORK FLOW DIAGRAM             ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div id="page3" class="page">
+
+<div class="p3-header">
+    <div style="max-width:1400px;margin:0 auto;">
+        <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+            <span style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);padding:4px 14px;border-radius:999px;font-size:11px;font-weight:600;color:#fff;">플랜트사업본부</span>
+            <span style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);padding:4px 14px;border-radius:999px;font-size:11px;font-weight:600;color:#fff;">Proposal Work Flow</span>
+        </div>
+        <h1 style="font-size:clamp(2rem,5vw,3.2rem);font-weight:900;line-height:1.1;letter-spacing:-1px;color:#fff;">Proposal Work Flow</h1>
+        <p style="margin-top:14px;font-size:15px;color:rgba(255,255,255,0.7);max-width:600px;line-height:1.7;">ITB 접수부터 입찰결과보고까지 19단계 전체 프로세스 플로우차트</p>
+        <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap;">
+            <button class="page-switch-btn" onclick="showPage('page1',document.getElementById('nav1'))">← Module Procedure</button>
+            <button class="page-switch-btn" onclick="showPage('page2',document.getElementById('nav2'))">← Bid Process + MDG</button>
+        </div>
+    </div>
+</div>
+
+<div style="max-width:1400px;margin:0 auto;padding:40px 24px;">
+
+<div style="text-align:center;margin-bottom:12px;">
+    <button class="mdg-toggle-btn" id="mdgToggle" onclick="toggleMDG()">
+        <span class="pulse-dot"></span> MDG 삽입 시뮬레이션
+    </button>
+    <p style="margin-top:10px;font-size:12px;color:#94A3B8;">버튼을 누르면 MDG Gate가 프로세스 사이에 삽입됩니다</p>
+</div>
+
+<div class="fc-wrap">
+<div class="fc-board" id="fcBoard">
+
+<!-- ═══ COL 1: 입찰검토 ═══ -->
+<div class="fc-col">
+    <div class="fc-col-header h-blue">입찰검토</div>
+
+    <div class="fc-box"><div class="fc-title"><span class="fc-num" style="background:#2563EB;">1</span>ITB 접수 & 검토의뢰</div><div>① 시기 : 즉시</div><div>② 주관 : 플랜트영업팀장</div><div>③ 목적 : PJT Risk 및 Winning Strategy 검토 의뢰</div><div>④ 대상 : 직무별 Specialist</div></div>
+
+    <div class="fc-box"><div class="fc-title"><span class="fc-num" style="background:#2563EB;">2</span>PJT Risk & Winning Strategy 회의</div><div>① 시기 : ITB 검토 의뢰 + 1주 內</div><div>② 주관 : 플랜트영업팀장</div><div>③ 목적 :</div><div style="padding-left:12px;">- PJT Risk 사항 검토 및 Winning Strategy 도출</div></div>
+
+    <!-- ★ MDG 1: between 2 and 3 -->
+    <div class="mdg-inline" onclick="goToMDG('p1-mdg1')">
+        <div class="mdg-label">Module Decision Gate</div>
+        <div class="mdg-name">MDG 1</div>
+        <div class="mdg-desc">모듈 적용 여부 확정 · Go / No-Go</div>
+        <span class="mdg-link">상세 보기 →</span>
+    </div>
+
+    <div class="fc-box"><div class="fc-title"><span class="fc-num" style="background:#2563EB;">3</span>유관부서 검토의견 요청</div><div>① 시기 : 본부심의 D-7</div><div>② 주관 : RM2팀/기획팀</div><div>③ 검토 부서 : 첨부#1 참조</div><div>④ 목적 : 주요 Risk 사항 검토 등</div></div>
+
+    <!-- 본부장 주관 회의 범례: 입찰검토 컬럼 최하단 고정 -->
+    <div style="margin-top:auto;padding:8px 12px;border-radius:8px;background:#FEF2F2;border:2px dashed #DC2626;text-align:center;font-size:11px;color:#DC2626;font-weight:600;">
+        <span style="border:2px dashed #DC2626;display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:middle;margin-right:6px;"></span>= 본부장 주관 회의
+    </div>
+</div>
+
+<!-- ═══ COL 2: 영업심의 & 전략수립 ═══ -->
+<div class="fc-col">
+    <div class="fc-col-header h-blue">영업심의 & 전략수립</div>
+    <div class="fc-box fc-chief"><div class="fc-title"><span class="fc-num" style="background:#D97706;">4</span>본부영업심의</div><div>① 시기 : ITB 접수 + 2주 內 (매주 화) / 전사 커미티 D-7日</div><div>② 주관 : 플랜트영업팀장</div><div>③ 목적 : 입찰 참여 여부 의사결정</div><div>④ 내용 :</div><div style="padding-left:12px;">- PJT 관련 상세사항</div><div style="padding-left:12px;">- 입찰참여구도</div><div style="padding-left:12px;">- PJT Risk & Winning Strategy 회의 결과 반영</div><div style="padding-left:12px;">- 입찰 비용 편성 및 요인</div><div class="fc-note">※ 본부 심의 후, 본부 內 유관부서 검토 의견 송부 (전사커미티 D-6日)<br>(기획 → RM2팀, 토신지, 첨부#1 참조)</div></div>
+    <div class="fc-box"><div class="fc-title"><span class="fc-num" style="background:#D97706;">5</span>전사 커미티 (사전심의) <span style="color:#DC2626;font-size:10px;font-weight:600;">(해당時)</span></div><div>① 시기 : 본부영업심의 차주 월요일</div><div>② 보고 : 해당 부문장/팀장</div><div>③ 목적 : 입찰참여 의사결정</div></div>
+    <div class="fc-box"><div class="fc-title"><span class="fc-num" style="background:#D97706;">6</span>KOM & ITB 공유회</div><div>① 시기 : 본부영업심의 후 2주 內</div><div>② 주관 : Pro-PD</div><div>③ 목적 : 공종별 ITB 상세 검토 및 Risk 사항 1차 Check & FU</div><div style="padding-left:12px;">- 프로젝트 개요</div><div style="padding-left:12px;">- 공정개요 / SOW</div><div style="padding-left:12px;">- ITB상 주요 Risk</div><div style="padding-left:12px;">- 입찰 Schedule</div></div>
+
+    <div class="fc-box fc-chief"><div class="fc-title"><span class="fc-num" style="background:#D97706;">7</span>입찰 전략 및 금액 산출 방안 보고</div><div>① 시기 : ITB 공유회 후 2주 內</div><div>② 보고 : Pro-PD</div><div>③ 목적 : 입찰 전략 및 금액 산출 방안 보고</div><div>④ 기타 : 안건별 보고자</div><div style="padding-left:12px;">- 영업전략 : 플랜트영업팀장</div><div style="padding-left:12px;">- 입찰전략 : Pro-PD, EM/PPM/CM</div><div style="padding-left:12px;">- Cost 산출방안 : 견적1/2팀장</div></div>
+</div>
+
+<!-- ═══ COL 3: Proposal 진행 ═══ -->
+<div class="fc-col">
+    <div class="fc-col-header h-blue" style="font-size:12px;">Proposal 진행 <span style="font-weight:400;font-size:10px;">※시점에 맞춰 Parallel하게 진행</span></div>
+    <div class="fc-proposal-grid">
+        <div class="fc-proposal-col">
+            <div class="fc-box"><div class="fc-title"><span class="fc-num" style="background:#059669;">8</span>공사건적방안 회의</div><div>① 시기 : ITB 공유 후 4주 內 (견적요청 1주 前)</div><div>② 주관 : Pro-PD/CM</div><div>③ 목적 : 견적 요청 업체 확정, Subcon. Plan 확정, 본사/시공법인 R&R 확정</div></div>
+
+            <!-- ★ MDG 2(Subcontracting Case): between 8 and 9-1 -->
+            <div class="mdg-inline" onclick="goToMDG('p1-mdg2')">
+                <div class="mdg-label">Module Decision Gate</div>
+                <div class="mdg-name">MDG 2</div>
+                <div class="mdg-desc">Subcontracting Case</div>
+                <span class="mdg-link">상세 보기 →</span>
+            </div>
+
+            <div class="fc-box"><div class="fc-title"><span class="fc-num" style="background:#059669;font-size:9px;">9-1</span>PKG BM 확인 회의</div><div>① 시기 : RFQ Issue 前 (1차) 및 Final BM Issue 약 1개월 前 (2차)</div><div>② 주관 : Pro-PD</div><div>③ 목적 : Package Item 內 Bulk Items SOW 및 MTO 기준 확정</div></div>
+
+            <!-- ★ MDG 2(PO Case): between 9-1 and 9-2 -->
+            <div class="mdg-inline" onclick="goToMDG('p1-mdg2')">
+                <div class="mdg-label">Module Decision Gate</div>
+                <div class="mdg-name">MDG 2</div>
+                <div class="mdg-desc">PO Case</div>
+                <span class="mdg-link">상세 보기 →</span>
+            </div>
+
+            <div class="fc-box"><div class="fc-title"><span class="fc-num" style="background:#059669;font-size:9px;">9-2</span>BM/BQ Review 회의</div><div>① 시기 : 1차 - 1차 BM 산출 後, 2차 - 1차 BM 산출 후 2개월 後</div><div>② 주관 : 1차 - 각 설계 팀장 (자체)</div><div>③ 목적 : BM/BQ 적정성 검토</div></div>
+
+            <div class="fc-box fc-chief"><div class="fc-title"><span class="fc-num" style="background:#059669;">10</span>EPC Schedule 적정성 검토회의</div><div>① 시기 : 사업수행계획보고 2주 前 실시</div><div>② 보고 : 플랜트 O&S사업팀장</div><div>③ 목적 : 글로벌 가능한 SCH 협의 도출</div></div>
+            <div class="fc-box"><div class="fc-title"><span class="fc-num" style="background:#059669;">13</span>Cost Review 회의</div><div>① 시기 : 사업수행계획보고 후 Cost 산출 즉시</div><div>② 주관 : 플랜트견적팀 (by건적L/E)</div><div>③ 목적 : 잔출원가의 적정성 검토</div><div>④ 대상 : 공사비, 기자재비, 경상비</div><div>⑤ 기타 : 대상별도 Cost Review 회의 개별 진행</div><div style="color:#1E40AF;font-size:10px;margin-top:4px;">※ 알짜TF FM 및 유관부서 참석하여 Review 진행</div></div>
+
+            <!-- ★ MDG 3: after 13 -->
+            <div class="mdg-inline" onclick="goToMDG('p1-mdg3')">
+                <div class="mdg-label">Module Decision Gate</div>
+                <div class="mdg-name">MDG 3</div>
+                <div class="mdg-desc">상세 FS 최종화 · 최적 모듈 범위 Lock-in</div>
+                <span class="mdg-link">상세 보기 →</span>
+            </div>
+        </div>
+        <div class="fc-proposal-col">
+            <div class="fc-box fc-chief"><div class="fc-title"><span class="fc-num" style="background:#059669;">11</span>Risk Review 회의</div><div><strong>시기</strong></div><div style="padding-left:12px;">1차 – KOM & ITB 공유회시 도출</div><div style="padding-left:12px;">2차 – BM 산출 後 (Risk Review TF + Risk Specialist)</div><div style="padding-left:12px;">3차 – 발주처 Clarification 완료 後 (본부장 보고)</div><div>② 주관 : Pro-PD</div><div>③ 목적 :</div><div style="padding-left:12px;">- Risk 도출 및 대응 방안 수립</div><div style="padding-left:12px;">- BM/BQ 주요 Issue 요약 보고</div></div>
+            <div class="fc-box fc-chief"><div class="fc-title"><span class="fc-num" style="background:#059669;">12</span>사업수행계획보고</div><div>① 시기 : 본부입찰심의 2주 前 보고</div><div>② 보고 : Pro-PD, EM, PPM, CM or PM</div><div>③ 목적 : 입찰 원가 산정기준 적정성 사전 검증, 하기 수행 계획 주요 개별 보고</div><div style="margin-top:6px;padding-left:12px;">- EPC Schedule (by Pro-PD)</div><div style="padding-left:12px;">- EPC HO / SO 조직도 (by Pro-PD)</div><div style="padding-left:12px;">- 사업 및 EPC 계약 주요 리스크 (by 사업팀장/EPC계약관리팀장)</div><div style="padding-left:12px;">- HO/SO MP Mob Plan (by Pro-PD/CM)</div><div style="padding-left:12px;">- 설계수행구도/계획 (by EM)</div><div style="padding-left:12px;">- 구매/물류/검사 수행계획 (by PPM)</div><div style="padding-left:12px;">- 공사출당 소화 계획 및 Sub-con Plan (by CM)</div></div>
+        </div>
+    </div>
+    <div style="margin-top:6px;text-align:right;font-size:10px;color:#94A3B8;">* HO : Home Office / SO : Site Office</div>
+</div>
+
+<!-- ═══ COL 4: 입찰심의 ═══ -->
+<div class="fc-col">
+    <div class="fc-col-header h-red">입찰심의</div>
+    <div class="fc-box"><div class="fc-title"><span class="fc-num" style="background:#DC2626;">14</span>유관부서 검토의견 요청</div><div>① 시기 : 본부심의 D-7</div><div>② 주관 : RM2팀/기획팀</div><div>③ 검토 부서 : 첨부#1 참조</div><div>④ 목적 : 입찰가/공기 적정성 검토</div></div>
+    <div class="fc-box"><div class="fc-title"><span class="fc-num" style="background:#DC2626;">15</span>심의시행 알림 및 유관부서의견 요청</div><div>① 시기 : 본부 심의 D-3</div><div>② 주관 : 플랜트 O&S사업팀</div><div>③ 목적 : 심의 자료 공유 및 유관부서 의견 요청 (to RM2 및 審 유관부서)</div></div>
+    <div class="fc-box fc-chief"><div class="fc-title"><span class="fc-num" style="background:#DC2626;">16</span>본부입찰심의</div><div>① 시기 : 매주 화요일 (전사 커미티 D-7日 전)</div><div>② 보고 : Pro-PD</div><div>③ 목적 : 최종 입찰의 의사결정</div><div style="padding-left:12px;">※ 의결가능: 별도 보고</div><div class="fc-note">※ 본부 심의 후, 본부 內 유관부서 검토 의견 송부 (전사커미티 D-6日)<br>(기획 → RM2팀, 토신지, 첨부#1 참조)</div></div>
+    <div class="fc-box"><div class="fc-title"><span class="fc-num" style="background:#DC2626;">17</span>전사 커미티 (사전심의) <span style="color:#DC2626;font-size:10px;font-weight:600;">(해당時)</span></div><div>① 시기 : 부입찰심의 차주 월요일</div><div>② 보고 : 해당 부문장/팀장</div><div>③ 목적 : 입찰참여 의사결정</div></div>
+    <div class="fc-box"><div class="fc-title"><span class="fc-num" style="background:#DC2626;">18</span>CEO 보고</div><div>① 시기 : 전사 커미티 당일 or +1日</div><div>② 보고 : RM실장</div><div>③ 목적 : 커미티 논의 결과 보고 및 최종투찰 금액 보고</div></div>
+    <div class="fc-box"><div class="fc-title"><span class="fc-num" style="background:#DC2626;">19</span>입찰결과보고</div><div>① 시기 : 입찰결과 발표 후 즉시</div><div>② 주관 : Pro-PD</div><div>③ 목적 : 입찰 결과 분석, 경쟁사 비교 분석, 향후 전략 도출</div></div>
+</div>
+
+</div></div>
+
+<!-- Phase flow summary -->
+<div style="background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:20px 28px;margin-top:24px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+    <div style="display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;">
+        <div style="padding:8px 20px;background:#EFF6FF;border-radius:8px 0 0 8px;border:1px solid #BFDBFE;text-align:center;"><p style="font-size:10px;font-weight:700;color:#2563EB;">입찰검토</p><p style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:800;color:#1E293B;margin:4px 0;">1→3</p></div>
+        <div style="color:#94A3B8;padding:0 8px;font-size:20px;">→</div>
+        <div style="padding:8px 20px;background:#FFFBEB;border:1px solid #FDE68A;text-align:center;"><p style="font-size:10px;font-weight:700;color:#D97706;">영업심의</p><p style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:800;color:#1E293B;margin:4px 0;">4→7</p></div>
+        <div style="color:#94A3B8;padding:0 8px;font-size:20px;">→</div>
+        <div style="padding:8px 20px;background:#ECFDF5;border:1px solid #A7F3D0;text-align:center;"><p style="font-size:10px;font-weight:700;color:#059669;">Proposal</p><p style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:800;color:#1E293B;margin:4px 0;">8→13</p></div>
+        <div style="color:#94A3B8;padding:0 8px;font-size:20px;">→</div>
+        <div style="padding:8px 20px;background:#FEF2F2;border-radius:0 8px 8px 0;border:1px solid #FECACA;text-align:center;"><p style="font-size:10px;font-weight:700;color:#DC2626;">입찰심의</p><p style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:800;color:#1E293B;margin:4px 0;">14→19</p></div>
+    </div>
+</div>
+
+<footer style="border-top:1px solid #E2E8F0;padding:40px 0 28px;margin-top:48px;">
+    <div style="max-width:1400px;margin:0 auto;padding:0 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
+        <p style="font-size:11px;color:#94A3B8;">플랜트사업본부 Proposal Work Flow</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <button class="page-switch-btn" onclick="showPage('page1',document.getElementById('nav1'))">← Module Procedure</button>
+            <button class="page-switch-btn" onclick="showPage('page2',document.getElementById('nav2'))">← Bid Process + MDG</button>
+        </div>
+    </div>
+</footer>
+</div>
+</div><!-- end #page3 -->
+
+
+<script>
+    // ===== PAGE SWITCHING =====
+    let chartsInitialized = false;
+
+    function showPage(pageId, navBtn) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        if (navBtn) navBtn.classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        if (pageId === 'page1' && !chartsInitialized) {
+            setTimeout(initCharts, 100);
+            chartsInitialized = true;
+        }
+    }
+
+    // ===== CHARTS (Page 1) =====
+    function initCharts() {
+        const C = { cyan:'#00D4FF', cyanDim:'rgba(0,212,255,0.15)', amber:'#FF8C00', grid:'rgba(107,127,163,0.15)', white:'#EDF2F7', dim:'#6B7FA3' };
+        Chart.defaults.font.family = "'Outfit','Noto Sans KR',sans-serif";
+        Chart.defaults.color = C.dim;
+
+        new Chart(document.getElementById('gate1RadarChart'), {
+            type:'radar',
+            data:{ labels:['공기 단축','원가 경쟁력','현장 안전성','시공 용이성','품질 관리'],
+                datasets:[{ label:'모듈화 전략 점수', data:[90,75,95,80,85], backgroundColor:C.cyanDim, borderColor:C.cyan, borderWidth:2, pointBackgroundColor:C.amber, pointRadius:5 }]
+            },
+            options:{ responsive:true, maintainAspectRatio:false,
+                scales:{ r:{ suggestedMin:0, suggestedMax:100, grid:{color:C.grid}, angleLines:{color:C.grid}, pointLabels:{font:{size:11,weight:'600'},color:C.white}, ticks:{display:false} }},
+                plugins:{ legend:{labels:{color:C.dim,font:{size:11}},position:'bottom'} }
+            }
+        });
+
+        new Chart(document.getElementById('gate2BarChart'), {
+            type:'bar',
+            data:{ labels:['Stick-built','Modular'],
+                datasets:[
+                    {label:'On-site 시수',data:[1000,400],backgroundColor:'#1B3A6B',borderRadius:4},
+                    {label:'Off-site 시수',data:[50,700],backgroundColor:C.cyan,borderRadius:4}
+                ]
+            },
+            options:{ responsive:true, maintainAspectRatio:false,
+                scales:{ x:{stacked:true,grid:{display:false},ticks:{color:C.white,font:{weight:'600'}}}, y:{stacked:true,grid:{color:C.grid},title:{display:true,text:'상대 시수 지수',color:C.dim,font:{size:11}},ticks:{color:C.dim}} },
+                plugins:{ legend:{labels:{color:C.dim,font:{size:11}},position:'bottom'}, title:{display:true,text:'On-site → Off-site 작업 전이 효과',color:C.white,font:{size:13,weight:'600'}} }
+            }
+        });
+
+        new Chart(document.getElementById('gate3ScatterChart'), {
+            type:'scatter',
+            data:{ datasets:[{ label:'모듈 적용 시나리오', data:[{x:20,y:95},{x:40,y:80},{x:60,y:65},{x:75,y:62},{x:85,y:78},{x:95,y:110}], backgroundColor:C.amber, pointRadius:7, pointHoverRadius:10 }] },
+            options:{ responsive:true, maintainAspectRatio:false,
+                scales:{ x:{title:{display:true,text:'모듈화 적용률 (%)',color:C.dim},grid:{color:C.grid},ticks:{color:C.dim}}, y:{title:{display:true,text:'총 원가 지수 (TIC)',color:C.dim},grid:{color:C.grid},ticks:{color:C.dim}} },
+                plugins:{ legend:{labels:{color:C.dim,font:{size:11}},position:'bottom'}, title:{display:true,text:'최적 모듈화 수준 도출',color:C.white,font:{size:13,weight:'600'}} }
+            }
+        });
+    }
+
+    // Init charts on load since page1 is active by default
+    window.addEventListener('DOMContentLoaded', () => { setTimeout(initCharts, 200); chartsInitialized = true; });
+
+    // ===== MDG SIMULATION =====
+    function toggleMDG() {
+        const board = document.getElementById('fcBoard');
+        const btn = document.getElementById('mdgToggle');
+        board.classList.toggle('mdg-open');
+        btn.classList.toggle('active');
+        btn.innerHTML = board.classList.contains('mdg-open')
+            ? '<span class="pulse-dot"></span> MDG 제거하기'
+            : '<span class="pulse-dot"></span> MDG 삽입 시뮬레이션';
+    }
+
+    function goToMDG(targetId) {
+        showPage('page1', document.getElementById('nav1'));
+        setTimeout(() => {
+            const el = document.getElementById(targetId);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.style.transition = 'box-shadow 0.4s';
+                el.style.boxShadow = '0 0 0 4px rgba(167,139,250,0.5), 0 0 40px rgba(167,139,250,0.3)';
+                setTimeout(() => { el.style.boxShadow = ''; }, 2500);
+            }
+        }, 400);
+    }
+</script>
+</body>
+</html>
