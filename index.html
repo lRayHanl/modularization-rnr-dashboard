@@ -20,13 +20,21 @@
   /* ═══ Auth Gate ═══ */
   #auth-gate {
     position: fixed; inset: 0;
-    background: linear-gradient(135deg, #0d1b3d 0%, #1a3d7c 60%, #2e5fb3 100%);
+    background: url('Modularization_Flow.png') center/cover no-repeat, linear-gradient(135deg, #0d1b3d, #1a3d7c);
     z-index: 99999;
     display: flex; align-items: center; justify-content: center;
+  }
+  #auth-gate::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: rgba(11, 20, 38, 0.55);
+    backdrop-filter: blur(3px);
   }
   #auth-gate.hidden { display: none; }
   #auth-gate input { -webkit-user-select: text !important; user-select: text !important; }
   .auth-box {
+    position: relative;
+    z-index: 1;
     background: rgba(255,255,255,0.08);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,0.2);
