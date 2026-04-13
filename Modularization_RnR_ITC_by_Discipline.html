@@ -482,6 +482,49 @@
   .dash-legend .main { background: linear-gradient(90deg, #2e7d32, #66bb6a); }
   .dash-legend .sub  { background: linear-gradient(90deg, #ef6c00, #ffb74d); opacity: 0.55; }
 
+  /* Donut chart */
+  .dash-donut-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #e8eef7;
+    min-height: 190px;
+  }
+  .dash-donut-wrap svg { flex-shrink: 0; }
+  .dash-donut-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 11.5px;
+    color: #444;
+  }
+  .dash-donut-legend .dl-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 3px 6px;
+    border-radius: 4px;
+    transition: background 0.12s;
+  }
+  .dash-donut-legend .dl-row:hover { background: #eef3fb; }
+  .dash-donut-legend .dl-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dash-donut-legend .dl-val {
+    font-weight: 800;
+    margin-left: auto;
+    min-width: 22px;
+    text-align: right;
+    font-size: 12px;
+  }
+
   /* Page 1 highlighted cell from dashboard */
   .matrix tbody tr.p1-highlight td.act { background: #fff3cd !important; }
   .matrix tbody td.dash-glow {
@@ -550,6 +593,91 @@
   /* Flow arrows between sequence groups (wrapping rows) — pseudo-arrow */
   .wf-seq-wrap { position: relative; }
 
+  /* ═══════════ Cover + Workflow Stage Container ═══════════ */
+  .tl-stage {
+    position: relative;
+    max-width: 1400px;
+    margin: 4px auto;
+    border-radius: 8px;
+    overflow: hidden;
+    /* Height determined by whichever child is taller */
+  }
+  /* Cover: visible by default, fills the stage */
+  .tl-cover-wrap {
+    position: relative;
+    z-index: 1;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    transition: opacity 0.5s ease;
+  }
+  .tl-cover-wrap:hover { box-shadow: 0 6px 30px rgba(0,0,0,0.6); }
+  .tl-cover-wrap.fading { opacity: 0.3; }
+  .tl-cover-wrap.hidden { display: none; }
+
+  /* Workflow: absolute overlay, transparent until clicked */
+  .tl-main-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 2;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1.2s ease-in;
+  }
+  .tl-main-overlay.revealed {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  /* After transition completes, switch to normal flow so page height adjusts */
+  .tl-main-overlay.flow {
+    position: relative;
+  }
+  .tl-cover-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+  .tl-cover-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%);
+  }
+  .tl-cover-title {
+    font-size: 28px;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 3px 12px rgba(0,0,0,0.8);
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .tl-cover-sub {
+    font-size: 15px;
+    color: rgba(255,255,255,0.85);
+    text-shadow: 0 2px 6px rgba(0,0,0,0.7);
+    margin-bottom: 18px;
+  }
+  .tl-cover-cta {
+    display: inline-block;
+    padding: 12px 32px;
+    background: rgba(255,179,0,0.9);
+    color: #1a3d7c;
+    font-size: 16px;
+    font-weight: 800;
+    border-radius: 30px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 16px rgba(255,179,0,0.5);
+    animation: cta-pulse 2s ease-in-out infinite;
+  }
+  @keyframes cta-pulse {
+    0%, 100% { box-shadow: 0 4px 16px rgba(255,179,0,0.4); transform: scale(1); }
+    50%      { box-shadow: 0 6px 24px rgba(255,179,0,0.7); transform: scale(1.04); }
+  }
+
   /* SVG Snake Timeline + SPMT Simulation (Page 3 top) */
   .tl-wrap {
     background: #1e2940;
@@ -609,6 +737,9 @@
       spmt-travel var(--spmt-dur, 50s) linear forwards,
       barge-sea-vis var(--spmt-dur, 50s) linear forwards;
   }
+  /* spmt-travel keyframe is now dynamically generated in JS
+     (updateSeaVisibilityKeyframes) with 3× slower sea range.
+     Fallback for pre-JS: */
   @keyframes spmt-travel {
     from { offset-distance: 0%; }
     to   { offset-distance: 100%; }
@@ -655,9 +786,234 @@
   .spmt-btn.spmt-pause.resumed:hover { background: #0288d1; }
   .spmt-btn.spmt-stop { background: #c62828; border-color: #8e0000; }
   .spmt-btn.spmt-stop:hover { background: #d32f2f; }
+  .spmt-btn.spmt-save { background: #00695c; border-color: #004d40; }
+  .spmt-btn.spmt-save:hover { background: #00897b; }
+  .spmt-btn.spmt-load { background: #4527a0; border-color: #311b92; }
+  .spmt-btn.spmt-load:hover { background: #5e35b1; }
+  .spmt-btn.spmt-layout-reset { background: #455a64; border-color: #263238; }
+  .spmt-btn.spmt-layout-reset:hover { background: #546e7a; }
   .spmt-btn.spmt-speed.active { background: #ff8f00; color: #fff; border-color: #bf360c; box-shadow: 0 0 6px rgba(255,143,0,0.6); }
   .spmt-controls .sep { color: #546e7a; font-size: 14px; margin: 0 4px; }
   .spmt-controls label { color: #b0bec5; font-size: 11px; font-weight: 700; margin: 0 2px; }
+
+  /* Speed slider (range input) */
+  .spmt-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 180px;
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(to right, #546e7a 0%, #ff8f00 50%, #ff5722 100%);
+    outline: none;
+    cursor: pointer;
+    margin: 0 6px;
+    border: 1px solid #263346;
+  }
+  .spmt-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ffc107;
+    border: 2px solid #fff;
+    cursor: grab;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    transition: transform 0.12s;
+  }
+  .spmt-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    background: #ffd54f;
+  }
+  .spmt-slider::-webkit-slider-thumb:active { cursor: grabbing; }
+  .spmt-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ffc107;
+    border: 2px solid #fff;
+    cursor: grab;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  }
+  /* ═══════════ Scrubber / Progress Bar (native range) ═══════════ */
+  .scrubber-wrap {
+    max-width: 1400px;
+    margin: 6px auto 4px;
+    padding: 8px 14px 6px;
+    background: #1e2940;
+    border: 1px solid #334055;
+    border-radius: 6px;
+  }
+  .scrubber-labels {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+    font-size: 10.5px;
+  }
+  .scrub-lbl {
+    color: #90a4ae;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    min-width: 36px;
+  }
+  .scrub-lbl:last-child { text-align: right; min-width: 80px; }
+  .scrub-title {
+    color: #78909c;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+  }
+  /* Native range input styled as a wide colorful bar */
+  .scrubber-input {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 14px;
+    border-radius: 7px;
+    background: linear-gradient(90deg, #42a5f5 0%, #ffca28 25%, #ff7043 40%, #66bb6a 55%, #ab47bc 75%, #ef5350 90%, #42a5f5 100%);
+    outline: none;
+    cursor: pointer;
+    border: 1px solid #37474f;
+  }
+  .scrubber-input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #ffc107;
+    border: 3px solid #fff;
+    cursor: grab;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+  }
+  .scrubber-input::-webkit-slider-thumb:hover { background: #ffd54f; transform: scale(1.1); }
+  .scrubber-input::-webkit-slider-thumb:active { cursor: grabbing; background: #fff; }
+  .scrubber-input::-moz-range-thumb {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: #ffc107; border: 3px solid #fff;
+    cursor: grab; box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+  }
+  .scrubber-phases {
+    display: flex;
+    margin-top: 2px;
+    height: 3px;
+    border-radius: 1.5px;
+    overflow: hidden;
+  }
+  .scrubber-phase-seg { height: 100%; }
+
+  /* ═══════════ Bottom Control Bar (under animation) ═══════════ */
+  .spmt-bottom-bar {
+    max-width: 1400px;
+    margin: 0 auto;
+    background: #1a2540;
+    border: 1px solid #334055;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    padding: 6px 12px 8px;
+  }
+  .scrubber-mini { margin-bottom: 4px; }
+  .scrubber-input-mini {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #42a5f5 0%, #ffca28 25%, #ff7043 40%, #66bb6a 55%, #ab47bc 75%, #ef5350 90%, #42a5f5 100%);
+    outline: none;
+    cursor: pointer;
+    border: 1px solid #263346;
+  }
+  .scrubber-input-mini::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #ffc107;
+    border: 2px solid #fff;
+    cursor: grab;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  }
+  .scrubber-input-mini::-webkit-slider-thumb:active { cursor: grabbing; background: #fff; }
+  .scrubber-input-mini::-moz-range-thumb {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: #ffc107; border: 2px solid #fff;
+    cursor: grab;
+  }
+  .spmt-ctrl-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+  .spmt-ctrl-row .spmt-btn {
+    padding: 4px 10px;
+    font-size: 11px;
+    border-radius: 3px;
+  }
+  .spmt-slider-mini {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 90px;
+    height: 5px;
+    border-radius: 3px;
+    background: linear-gradient(to right, #546e7a, #ff8f00, #ff5722);
+    outline: none;
+    cursor: pointer;
+  }
+  .spmt-slider-mini::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: #ffc107; border: 2px solid #fff;
+    cursor: grab;
+  }
+  .spmt-slider-mini::-moz-range-thumb {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: #ffc107; border: 2px solid #fff;
+  }
+  .spmt-speed-label-mini {
+    min-width: 32px;
+    padding: 2px 5px;
+    background: #ff8f00;
+    color: #fff;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 900;
+    text-align: center;
+  }
+  .spmt-ctrl-row .scrub-lbl {
+    color: #90a4ae;
+    font-size: 10px;
+    font-weight: 700;
+  }
+  .spmt-status-mini {
+    color: #78909c;
+    font-size: 10px;
+    font-style: italic;
+  }
+  .spmt-btn-sm {
+    padding: 3px 6px;
+    border: 1px solid #546e7a;
+    background: #37474f;
+    color: #eceff1;
+    cursor: pointer;
+    font-size: 12px;
+    border-radius: 3px;
+  }
+  .spmt-btn-sm:hover { background: #546e7a; }
+
+  .spmt-speed-label {
+    display: inline-block;
+    min-width: 44px;
+    padding: 3px 8px;
+    background: #ff8f00;
+    color: #fff;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 900;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    box-shadow: 0 0 4px rgba(255,143,0,0.5);
+  }
   .spmt-status { color: #90a4ae; font-size: 11px; font-style: italic; margin-left: auto; }
 
   /* Workflow diagram (Page 3) */
@@ -861,10 +1217,12 @@
     <div class="dash-card">
       <h4>전체 Activity 통계</h4>
       <div class="dash-kpi-row" id="dash1-kpi"></div>
+      <div class="dash-donut-wrap" id="dash1-donut-activity"></div>
     </div>
     <div class="dash-card">
       <h4>Stage 별 Activity 수 (클릭 = 해당 Stage 헤더로 이동)</h4>
       <div class="dash-phase-list" id="dash1-stages"></div>
+      <div class="dash-donut-wrap" id="dash1-donut-stage"></div>
     </div>
     <div class="dash-card">
       <h4>Discipline 별 E (Execution) 담당 / S (Support) (클릭 = 첫 해당 행)</h4>
@@ -1488,10 +1846,12 @@
     <div class="dash-card">
       <h4>전체 Activity 통계</h4>
       <div class="dash-kpi-row" id="dash2-kpi"></div>
+      <div class="dash-donut-wrap" id="dash2-donut-activity"></div>
     </div>
     <div class="dash-card">
       <h4>Phase 별 Activity 수 (클릭 = 해당 Phase 첫 행)</h4>
       <div class="dash-phase-list" id="dash2-phases"></div>
+      <div class="dash-donut-wrap" id="dash2-donut-phase"></div>
     </div>
     <div class="dash-card">
       <h4>Discipline 별 ● 주관 / ○ 지원 (클릭 = 첫 해당 행)</h4>
@@ -2447,22 +2807,20 @@
     <span class="count">Phase 색상 Road · 배경 이미지 · Play 버튼으로 SPMT 시뮬레이션 · 속도 1×~5×</span>
   </div>
 
-  <div class="spmt-controls">
-    <button class="spmt-btn spmt-play" onclick="spmtPlay()">▶ Play</button>
-    <button class="spmt-btn spmt-pause" id="spmt-pause-btn" onclick="spmtPause()">⏸ Pause</button>
-    <button class="spmt-btn spmt-stop" onclick="spmtStop()">⏹ Reset</button>
-    <span class="sep">│</span>
-    <label>Speed:</label>
-    <button class="spmt-btn spmt-speed active" data-speed="1" onclick="setSpmtSpeed(1)">1×</button>
-    <button class="spmt-btn spmt-speed" data-speed="2" onclick="setSpmtSpeed(2)">2×</button>
-    <button class="spmt-btn spmt-speed" data-speed="3" onclick="setSpmtSpeed(3)">3×</button>
-    <button class="spmt-btn spmt-speed" data-speed="4" onclick="setSpmtSpeed(4)">4×</button>
-    <button class="spmt-btn spmt-speed" data-speed="5" onclick="setSpmtSpeed(5)">5×</button>
-    <span class="sep">│</span>
-    <span class="spmt-status" id="spmt-status">대기 중 · Play 버튼을 눌러 시작</span>
-  </div>
+  <!-- Stage container: cover + workflow stacked -->
+  <div class="tl-stage" id="tl-stage">
+    <!-- Cover image (bottom layer, click to reveal workflow) -->
+    <div class="tl-cover-wrap" id="tl-cover-wrap" onclick="dismissCover()">
+      <img src="module_transport_bg.png" class="tl-cover-img" alt="Module Transport Overview" draggable="false">
+      <div class="tl-cover-overlay">
+        <div class="tl-cover-title">🚛 Module Workflow Simulation</div>
+        <div class="tl-cover-sub">Fabrication → Sea Transport → Installation</div>
+        <div class="tl-cover-cta">▶ 클릭하여 시뮬레이션 시작</div>
+      </div>
+    </div>
 
-  <div class="tl-wrap">
+    <!-- Workflow (top layer, initially transparent — fades in over cover) -->
+    <div class="tl-wrap tl-main-overlay" id="tl-main-wrap">
     <svg id="spmt-svg" class="tl-svg" viewBox="0 0 1400 815" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMin meet">
 <rect x="0" y="0" width="1400" height="815" fill="#1e2940" rx="6"/>
 <image href="module_transport_bg.png" x="0" y="0" width="1400" height="815" preserveAspectRatio="xMidYMid slice" opacity="0.3"/>
@@ -3335,7 +3693,39 @@ window.SPMT_NODES = [{idx:0,no:"1",x:53.5,y:110.1,phase:"PM"},{idx:1,no:"2",x:14
 window.SPMT_SEGS  = [{idx:0,from:0,to:1,midX:99.02,midY:133.97,uturn:false,ltr:true},{idx:1,from:1,to:2,midX:199.26,midY:96.70,uturn:false,ltr:true},{idx:2,from:2,to:3,midX:304.21,midY:124.57,uturn:false,ltr:true},{idx:3,from:3,to:4,midX:401.80,midY:86.76,uturn:false,ltr:true},{idx:4,from:4,to:5,midX:498.10,midY:113.90,uturn:false,ltr:true},{idx:5,from:5,to:6,midX:601.24,midY:96.40,uturn:false,ltr:true},{idx:6,from:6,to:7,midX:701.65,midY:122.71,uturn:false,ltr:true},{idx:7,from:7,to:8,midX:802.13,midY:98.35,uturn:false,ltr:true},{idx:8,from:8,to:9,midX:901.17,midY:137.06,uturn:false,ltr:true},{idx:9,from:9,to:10,midX:995.23,midY:110.64,uturn:false,ltr:true},{idx:10,from:10,to:11,midX:1092.62,midY:137.42,uturn:false,ltr:true},{idx:11,from:11,to:12,midX:1187.86,midY:94.98,uturn:false,ltr:true},{idx:12,from:12,to:13,midX:1292.68,midY:123.37,uturn:false,ltr:true},{idx:13,from:13,to:14,midX:1401.33,midY:182.85,uturn:true,ltr:true},{idx:14,from:14,to:15,midX:1293.15,midY:250.53,uturn:false,ltr:false},{idx:15,from:15,to:16,midX:1191.80,midY:283.81,uturn:false,ltr:false},{idx:16,from:16,to:17,midX:1093.31,midY:248.82,uturn:false,ltr:false},{idx:17,from:17,to:18,midX:997.98,midY:277.15,uturn:false,ltr:false},{idx:18,from:18,to:19,midX:900.74,midY:244.26,uturn:false,ltr:false},{idx:19,from:19,to:20,midX:799.17,midY:281.29,uturn:false,ltr:false},{idx:20,from:20,to:21,midX:698.18,midY:250.75,uturn:false,ltr:false},{idx:21,from:21,to:22,midX:600.69,midY:278.63,uturn:false,ltr:false},{idx:22,from:22,to:23,midX:503.50,midY:247.47,uturn:false,ltr:false},{idx:23,from:23,to:24,midX:404.10,midY:280.80,uturn:false,ltr:false},{idx:24,from:24,to:25,midX:297.64,midY:256.37,uturn:false,ltr:false},{idx:25,from:25,to:26,midX:200.21,midY:286.43,uturn:false,ltr:false},{idx:26,from:26,to:27,midX:107.74,midY:240.35,uturn:false,ltr:false},{idx:27,from:27,to:28,midX:-0.05,midY:328.68,uturn:true,ltr:false},{idx:28,from:28,to:29,midX:102.69,midY:425.93,uturn:false,ltr:true},{idx:29,from:29,to:30,midX:203.47,midY:411.13,uturn:false,ltr:true},{idx:30,from:30,to:31,midX:303.36,midY:441.99,uturn:false,ltr:true},{idx:31,from:31,to:32,midX:401.97,midY:398.02,uturn:false,ltr:true},{idx:32,from:32,to:33,midX:503.01,midY:440.29,uturn:false,ltr:true},{idx:33,from:33,to:34,midX:603.00,midY:400.54,uturn:false,ltr:true},{idx:34,from:34,to:35,midX:704.76,midY:427.45,uturn:false,ltr:true},{idx:35,from:35,to:36,midX:806.96,midY:392.87,uturn:false,ltr:true},{idx:36,from:36,to:37,midX:899.70,midY:434.43,uturn:false,ltr:true},{idx:37,from:37,to:38,midX:995.52,midY:402.08,uturn:false,ltr:true},{idx:38,from:38,to:39,midX:1099.33,midY:420.87,uturn:false,ltr:true},{idx:39,from:39,to:40,midX:1193.67,midY:392.87,uturn:false,ltr:true},{idx:40,from:40,to:41,midX:1293.58,midY:414.97,uturn:false,ltr:true},{idx:41,from:41,to:42,midX:1401.13,midY:478.64,uturn:true,ltr:true},{idx:42,from:42,to:43,midX:1296.40,midY:544.89,uturn:false,ltr:false},{idx:43,from:43,to:44,midX:1197.31,midY:570.78,uturn:false,ltr:false},{idx:44,from:44,to:45,midX:1096.77,midY:542.22,uturn:false,ltr:false},{idx:45,from:45,to:46,midX:1004.48,midY:590.65,uturn:false,ltr:false},{idx:46,from:46,to:47,midX:902.58,midY:551.33,uturn:false,ltr:false},{idx:47,from:47,to:48,midX:801.82,midY:580.25,uturn:false,ltr:false},{idx:48,from:48,to:49,midX:697.09,midY:548.80,uturn:false,ltr:false},{idx:49,from:49,to:50,midX:591.98,midY:586.91,uturn:false,ltr:false},{idx:50,from:50,to:51,midX:499.32,midY:542.41,uturn:false,ltr:false},{idx:51,from:51,to:52,midX:401.78,midY:575.27,uturn:false,ltr:false},{idx:52,from:52,to:53,midX:302.99,midY:546.60,uturn:false,ltr:false},{idx:53,from:53,to:54,midX:205.06,midY:568.72,uturn:false,ltr:false},{idx:54,from:54,to:55,midX:103.43,midY:557.03,uturn:false,ltr:false},{idx:55,from:55,to:56,midX:0.80,midY:646.56,uturn:true,ltr:false},{idx:56,from:56,to:57,midX:97.30,midY:734.71,uturn:false,ltr:true},{idx:57,from:57,to:58,midX:193.27,midY:703.14,uturn:false,ltr:true},{idx:58,from:58,to:59,midX:289.55,midY:745.16,uturn:false,ltr:true},{idx:59,from:59,to:60,midX:376.48,midY:703.39,uturn:false,ltr:true},{idx:60,from:60,to:61,midX:471.34,midY:725.24,uturn:false,ltr:true},{idx:61,from:61,to:62,midX:559.44,midY:684.43,uturn:false,ltr:true},{idx:62,from:62,to:63,midX:648.04,midY:716.17,uturn:false,ltr:true},{idx:63,from:63,to:64,midX:741.28,midY:691.26,uturn:false,ltr:true},{idx:64,from:64,to:65,midX:834.67,midY:725.71,uturn:false,ltr:true},{idx:65,from:65,to:66,midX:927.52,midY:683.72,uturn:false,ltr:true},{idx:66,from:66,to:67,midX:1024.56,midY:721.15,uturn:false,ltr:true},{idx:67,from:67,to:68,midX:1117.86,midY:694.74,uturn:false,ltr:true},{idx:68,from:68,to:69,midX:1204.57,midY:725.43,uturn:false,ltr:true},{idx:69,from:69,to:70,midX:1297.70,midY:690.85,uturn:false,ltr:true}];
 window.SPMT_UTURN_OFFSET = 55;
 </script>
+  </div><!-- /tl-main-wrap -->
+  </div><!-- /tl-stage -->
+
+  <!-- Controls + Scrubber — BELOW the animation canvas -->
+  <div class="spmt-bottom-bar">
+    <div class="scrubber-mini" id="scrubber-wrap">
+      <input type="range" id="scrubber-range" class="scrubber-input-mini"
+             min="0" max="1000" step="1" value="0"
+             oninput="onScrubberInput(this.value)">
+      <div class="scrubber-phases" id="scrubber-phases"></div>
+    </div>
+    <div class="spmt-ctrl-row">
+      <button class="spmt-btn spmt-play" onclick="spmtPlay()">▶</button>
+      <button class="spmt-btn spmt-pause" id="spmt-pause-btn" onclick="spmtPause()">⏸</button>
+      <button class="spmt-btn spmt-stop" onclick="spmtStop()">⏹</button>
+      <span class="sep">│</span>
+      <input type="range" id="spmt-speed-slider" class="spmt-slider-mini"
+             min="0.5" max="5" step="0.1" value="1"
+             oninput="setSpmtSpeed(parseFloat(this.value))">
+      <span id="spmt-speed-label" class="spmt-speed-label-mini">1.0×</span>
+      <span class="sep">│</span>
+      <span class="scrub-lbl" id="scrub-cur">0%</span>
+      <span class="scrub-lbl" id="scrub-node">No.1</span>
+      <span class="sep">│</span>
+      <span class="spmt-status-mini" id="spmt-status">대기 중</span>
+      <span class="sep">│</span>
+      <button class="spmt-btn-sm spmt-save" onclick="saveLayoutAsDefault()" title="현재 배치를 Default로 저장">💾</button>
+      <button class="spmt-btn-sm spmt-load" onclick="document.getElementById('spmt-load-file').click()" title="Layout 파일 불러오기">📂</button>
+      <input type="file" id="spmt-load-file" accept=".json,application/json" style="display:none;" onchange="loadLayoutFromFile(event)">
+      <button class="spmt-btn-sm spmt-layout-reset" onclick="resetLayoutToFactory()" title="원본 배치로 복원">🔄</button>
+    </div>
   </div>
+  <span id="spmt-layout-status" style="display:none;"></span>
 
   <!-- ═══════════ PHASE-GROUPED WORKFLOW (기존) ═══════════ -->
   <div class="wf-phase-bar" style="border-left-color:#1a3d7c; background:#e8eef7; margin-top:30px;">
@@ -3521,12 +3911,14 @@ function spmtPlay() {
   var dur = (SPMT_BASE_DUR / spmtSpeed) + 's';
   g.style.setProperty('--spmt-dur', dur);
   if (barge) barge.style.setProperty('--spmt-dur', dur);
-  // Restart both animations in sync
+  // Restart both animations in sync — clear any previous negative delay
   g.classList.remove('running');
   g.style.animationPlayState = '';
+  g.style.animationDelay = '0s';
   if (barge) {
     barge.classList.remove('running');
     barge.style.animationPlayState = '';
+    barge.style.animationDelay = '0s';
   }
   // Force reflow so the animation restarts from 0%
   void g.getBoundingClientRect();
@@ -3536,7 +3928,7 @@ function spmtPlay() {
   spmtPlaying = true;
   spmtPaused  = false;
   updatePauseBtnUI();
-  updateSpmtStatus('▶ 운행 중 · ' + spmtSpeed + '× 속도 · ' + (SPMT_BASE_DUR / spmtSpeed).toFixed(0) + '초 소요 · No.60~62 구간은 Barge 운송');
+  updateSpmtStatus('▶ 운행 중 · ' + spmtSpeed.toFixed(1) + '× 속도 · ' + (SPMT_BASE_DUR / spmtSpeed).toFixed(0) + '초 소요 · No.60~62 구간은 Barge 운송');
   g.addEventListener('animationend', onSpmtAnimationEnd, { once: true });
 }
 
@@ -3587,11 +3979,13 @@ function spmtStop() {
   if (!g) return;
   g.classList.remove('running');
   g.style.animationPlayState = '';
+  g.style.animationDelay = '0s';
   void g.getBoundingClientRect();
   g.style.offsetDistance = '0%';
   if (barge) {
     barge.classList.remove('running');
     barge.style.animationPlayState = '';
+    barge.style.animationDelay = '0s';
     void barge.getBoundingClientRect();
     barge.style.offsetDistance = '0%';
   }
@@ -3601,18 +3995,68 @@ function spmtStop() {
   updateSpmtStatus('⏹ 정지 · 시작 위치(No.1)로 리셋');
 }
 
+// Read current offset-distance of the SPMT group (0.0 ~ 1.0)
+function readCurrentProgress() {
+  var g = document.querySelector('.spmt-group');
+  if (!g) return 0;
+  var cs = window.getComputedStyle(g);
+  var od = cs.offsetDistance || '0%';
+  // Could be "0%" or "50%" or "0px" — parse percentage
+  var m = od.match(/([-\d.]+)\s*%/);
+  if (m) return Math.max(0, Math.min(1, parseFloat(m[1]) / 100));
+  return 0;
+}
+
+// Apply speed + progress to both SPMT and Barge without restarting from 0
+function applySpeedFromProgress(newSpeed, progress01) {
+  var g = document.querySelector('.spmt-group');
+  var barge = document.querySelector('.barge-group');
+  if (!g) return;
+  var durSec = SPMT_BASE_DUR / newSpeed;
+  var elapsed = progress01 * durSec;
+  var preserveState = spmtPaused ? 'paused' : (spmtPlaying ? 'running' : 'paused');
+
+  // Kick the animation: remove class, set negative delay so the new animation
+  // starts "already at" the current progress, then re-add class.
+  function reArm(el) {
+    if (!el) return;
+    el.classList.remove('running');
+    el.style.setProperty('--spmt-dur', durSec + 's');
+    el.style.animationDelay = (-elapsed) + 's';
+    el.style.animationPlayState = preserveState;
+    // Force reflow so the removal takes effect
+    void el.getBoundingClientRect();
+    el.classList.add('running');
+    // After reapplying, ensure play state is set again (class add may override)
+    el.style.animationPlayState = preserveState;
+  }
+  reArm(g);
+  reArm(barge);
+}
+
 function setSpmtSpeed(speed) {
+  // Clamp and quantize to 1 decimal
+  speed = Math.max(0.5, Math.min(5, parseFloat(speed) || 1));
+  speed = Math.round(speed * 10) / 10;
   spmtSpeed = speed;
-  document.querySelectorAll('.spmt-speed').forEach(function(b) {
-    b.classList.remove('active');
-  });
-  var btn = document.querySelector('.spmt-speed[data-speed="' + speed + '"]');
-  if (btn) btn.classList.add('active');
-  if (spmtPlaying) {
-    // Restart with new speed
-    spmtPlay();
+
+  // Update slider label
+  var label = document.getElementById('spmt-speed-label');
+  if (label) label.textContent = speed.toFixed(1) + '×';
+  var slider = document.getElementById('spmt-speed-slider');
+  if (slider && parseFloat(slider.value) !== speed) slider.value = speed;
+
+  if (spmtPlaying || spmtPaused) {
+    // Preserve current position — read progress BEFORE changing anything
+    var progress = readCurrentProgress();
+    applySpeedFromProgress(speed, progress);
+    var remaining = (1 - progress) * (SPMT_BASE_DUR / speed);
+    updateSpmtStatus((spmtPaused ? '⏸ ' : '▶ ') +
+      speed.toFixed(1) + '× · 현재 위치 ' + (progress * 100).toFixed(0) + '% · 남은 시간 ' +
+      remaining.toFixed(0) + '초');
   } else {
-    updateSpmtStatus('속도 ' + speed + '× 선택됨 (' + (SPMT_BASE_DUR / speed).toFixed(0) + '초 소요) · Play 버튼으로 시작');
+    updateSpmtStatus('속도 ' + speed.toFixed(1) + '× 선택됨 (' +
+      (SPMT_BASE_DUR / speed).toFixed(0) + '초 소요) · Play 버튼으로 시작');
   }
 }
 
@@ -3705,6 +4149,10 @@ function updateContinuousPaths() {
   if (barge) {
     barge.style.offsetPath = "path('" + d + "')";
   }
+  // Refresh node mask — but ONLY when NOT animating (heavy DOM operation causes stutter)
+  if (typeof buildNodeMask === 'function' && !spmtPlaying) {
+    try { buildNodeMask(); } catch (e) {}
+  }
   // Recompute sea range after path changes
   setTimeout(updateSeaVisibilityKeyframes, 0);
 }
@@ -3784,25 +4232,53 @@ function computeSeaRangePercents() {
 function updateSeaVisibilityKeyframes() {
   var r = computeSeaRangePercents();
   if (!r) return;
-  // Build keyframes text
-  var spmtKeyframes =
+
+  // ── Compute TIME percentages for non-linear sea range (3× slower) ──
+  var seaDistRange = r.exit - r.full;         // distance% of sea
+  var landDistRange = 100 - seaDistRange;     // distance% of land
+  var SLOW_FACTOR = 3;
+  var totalVirtual = landDistRange + seaDistRange * SLOW_FACTOR;
+  var landBeforeDist = r.full;                // path 0→seaStart
+
+  // Time% where sea starts and ends (used by ALL keyframes):
+  var seaTimeStart = (landBeforeDist / totalVirtual) * 100;
+  var seaTimeEnd = seaTimeStart + (seaDistRange * SLOW_FACTOR / totalVirtual) * 100;
+  var fade = 0.3; // small fade margin in TIME%
+
+  // ── Visibility keyframes — NOW USING TIME% (not distance%) ──
+  // This ensures SPMT/Barge swap happens at the EXACT same moment
+  // as when the travel keyframe reaches node 60.
+  var visEnter = Math.max(0, seaTimeStart - fade);
+  var visExit  = Math.min(100, seaTimeEnd + fade);
+
+  var spmtVisKf =
     '@keyframes spmt-sea-vis {' +
       '0% { opacity: 1; }' +
-      r.enter.toFixed(2) + '% { opacity: 1; }' +
-      r.full.toFixed(2)  + '% { opacity: 0; }' +
-      r.exit.toFixed(2)  + '% { opacity: 0; }' +
-      r.out.toFixed(2)   + '% { opacity: 1; }' +
+      visEnter.toFixed(2)     + '% { opacity: 1; }' +
+      seaTimeStart.toFixed(2) + '% { opacity: 0; }' +
+      seaTimeEnd.toFixed(2)   + '% { opacity: 0; }' +
+      visExit.toFixed(2)      + '% { opacity: 1; }' +
       '100% { opacity: 1; }' +
     '}';
-  var bargeKeyframes =
+  var bargeVisKf =
     '@keyframes barge-sea-vis {' +
       '0% { opacity: 0; }' +
-      r.enter.toFixed(2) + '% { opacity: 0; }' +
-      r.full.toFixed(2)  + '% { opacity: 1; }' +
-      r.exit.toFixed(2)  + '% { opacity: 1; }' +
-      r.out.toFixed(2)   + '% { opacity: 0; }' +
+      visEnter.toFixed(2)     + '% { opacity: 0; }' +
+      seaTimeStart.toFixed(2) + '% { opacity: 1; }' +
+      seaTimeEnd.toFixed(2)   + '% { opacity: 1; }' +
+      visExit.toFixed(2)      + '% { opacity: 0; }' +
       '100% { opacity: 0; }' +
     '}';
+
+  // ── Travel keyframe with 3× SLOWER sea range ──
+  var travelKf =
+    '@keyframes spmt-travel {' +
+      '0% { offset-distance: 0%; }' +
+      seaTimeStart.toFixed(2) + '% { offset-distance: ' + r.full.toFixed(2) + '%; }' +
+      seaTimeEnd.toFixed(2)   + '% { offset-distance: ' + r.exit.toFixed(2) + '%; }' +
+      '100% { offset-distance: 100%; }' +
+    '}';
+
   var styleId = 'spmt-sea-vis-style';
   var el = document.getElementById(styleId);
   if (!el) {
@@ -3810,7 +4286,7 @@ function updateSeaVisibilityKeyframes() {
     el.id = styleId;
     document.head.appendChild(el);
   }
-  el.textContent = spmtKeyframes + '\n' + bargeKeyframes;
+  el.textContent = spmtVisKf + '\n' + bargeVisKf + '\n' + travelKf;
 }
 
 function onNodeDragMove(evt) {
@@ -3823,7 +4299,8 @@ function onNodeDragMove(evt) {
     if (el) el.classList.add('dragging');
   }
   if (!dragState.moved) return;
-  var p = svgPointFromEvent(evt);
+  var rawP = svgPointFromEvent(evt);
+  var p = clampPos(rawP);  // Keep inside viewBox bounds
   var node = window.SPMT_NODES[dragState.idx];
   node.x = p.x;
   node.y = p.y;
@@ -3937,7 +4414,8 @@ function attachMidHandlers() {
 function onMidDragMove(evt) {
   if (midDragState.segIdx === null) return;
   midDragState.moved = true;
-  var p = svgPointFromEvent(evt);
+  var rawP = svgPointFromEvent(evt);
+  var p = clampPos(rawP);  // Keep inside viewBox bounds
   var seg = window.SPMT_SEGS[midDragState.segIdx];
   if (!seg) return;
   seg.midX = p.x;
@@ -4090,26 +4568,588 @@ onNodeDragEnd = function (evt) {
   }
 };
 
+// ─────────── Default node positions (matching reference image) ───────────
+// Map-style layout. All coordinates clamped to 1400×815 viewBox with margin.
+// Bounds enforced: x in [60, 1340], y in [60, 760]
+window.DEFAULT_SPMT_POS = {
+  "1":  { x: 180,  y: 200 },
+  "2":  { x: 130,  y: 75  },
+  "3":  { x: 280,  y: 75  },
+  "4":  { x: 420,  y: 70  },
+  "5":  { x: 550,  y: 70  },
+  "6":  { x: 670,  y: 70  },
+  "7":  { x: 790,  y: 70  },
+  "8":  { x: 800,  y: 150 },
+  "9":  { x: 685,  y: 150 },
+  "10": { x: 550,  y: 115 },
+  "11": { x: 425,  y: 150 },
+  "12": { x: 310,  y: 135 },
+  "13": { x: 360,  y: 210 },
+  "14": { x: 455,  y: 200 },
+  "15": { x: 590,  y: 200 },
+  "16": { x: 705,  y: 205 },
+  "17": { x: 915,  y: 110 },
+  "18": { x: 1040, y: 75  },
+  "19": { x: 1170, y: 80  },
+  "20": { x: 1275, y: 105 },
+  "21": { x: 1320, y: 80  },
+  "22": { x: 1335, y: 155 },
+  "23": { x: 1265, y: 195 },
+  "24": { x: 1140, y: 185 },
+  "25": { x: 1030, y: 185 },
+  "26": { x: 935,  y: 180 },
+  "27": { x: 940,  y: 230 },
+  "28": { x: 1110, y: 250 },
+  "29": { x: 1250, y: 260 },
+  "30": { x: 1175, y: 295 },
+  "31": { x: 1070, y: 305 },
+  "32": { x: 970,  y: 320 },
+  "34": { x: 855,  y: 275 },
+  "35": { x: 730,  y: 260 },
+  "36": { x: 490,  y: 320 },
+  "37": { x: 600,  y: 460 },
+  "39": { x: 690,  y: 355 },
+  "40": { x: 835,  y: 430 },
+  "41": { x: 1000, y: 450 },
+  "42": { x: 1150, y: 410 },
+  "43": { x: 1255, y: 485 },
+  "44": { x: 1330, y: 495 },
+  "45": { x: 1290, y: 620 },
+  "46": { x: 1195, y: 540 },
+  "47": { x: 1150, y: 600 },
+  "48": { x: 1030, y: 625 },
+  "49": { x: 965,  y: 570 },
+  "50": { x: 920,  y: 465 },
+  "51": { x: 845,  y: 555 },
+  "52": { x: 665,  y: 525 },
+  "53": { x: 625,  y: 485 },
+  "54": { x: 390,  y: 355 },
+  "55": { x: 335,  y: 390 },
+  "56": { x: 245,  y: 490 },
+  "57": { x: 205,  y: 545 },
+  "58": { x: 160,  y: 600 },
+  "59": { x: 165,  y: 660 },
+  "60": { x: 250,  y: 690 },
+  "61": { x: 380,  y: 475 },
+  "62": { x: 500,  y: 535 },
+  "63": { x: 570,  y: 755 },
+  "64": { x: 625,  y: 645 },
+  "65": { x: 715,  y: 640 },
+  "66": { x: 790,  y: 675 },
+  "67": { x: 865,  y: 700 },
+  "68": { x: 945,  y: 675 },
+  "69": { x: 1040, y: 685 },
+  "70": { x: 1135, y: 700 },
+  "71": { x: 1230, y: 700 },
+  "72": { x: 1320, y: 695 },
+  "75": { x: 1340, y: 200 }
+};
+
+// Clamp a position to stay inside viewBox with margin
+function clampPos(p) {
+  var MIN_X = 55, MAX_X = 1345;
+  var MIN_Y = 65, MAX_Y = 775;
+  return {
+    x: Math.max(MIN_X, Math.min(MAX_X, p.x)),
+    y: Math.max(MIN_Y, Math.min(MAX_Y, p.y))
+  };
+}
+
+// ─────────── SVG Mask to hide road inside all node circles ───────────
+function buildNodeMask() {
+  var svg = document.getElementById('spmt-svg');
+  if (!svg || !window.SPMT_NODES) return;
+  var defs = svg.querySelector('defs');
+  if (!defs) {
+    defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    svg.insertBefore(defs, svg.firstChild);
+  }
+  var existing = defs.querySelector('#node-mask');
+  if (existing) existing.parentNode.removeChild(existing);
+
+  var vb = svg.viewBox.baseVal;
+  var W = vb && vb.width  ? vb.width  : 1400;
+  var H = vb && vb.height ? vb.height : 815;
+
+  var NS = 'http://www.w3.org/2000/svg';
+  var mask = document.createElementNS(NS, 'mask');
+  mask.setAttribute('id', 'node-mask');
+  mask.setAttribute('maskUnits', 'userSpaceOnUse');
+  mask.setAttribute('x', '0');
+  mask.setAttribute('y', '0');
+  mask.setAttribute('width',  W);
+  mask.setAttribute('height', H);
+
+  // White = visible
+  var bg = document.createElementNS(NS, 'rect');
+  bg.setAttribute('x', '0');
+  bg.setAttribute('y', '0');
+  bg.setAttribute('width',  W);
+  bg.setAttribute('height', H);
+  bg.setAttribute('fill', 'white');
+  mask.appendChild(bg);
+
+  // Black circles at each node — road hidden inside these
+  window.SPMT_NODES.forEach(function (nd) {
+    var c = document.createElementNS(NS, 'circle');
+    c.setAttribute('cx', nd.x.toFixed(1));
+    c.setAttribute('cy', nd.y.toFixed(1));
+    c.setAttribute('r',  '19');  // slightly larger than node outer radius (17)
+    c.setAttribute('fill', 'black');
+    mask.appendChild(c);
+  });
+  defs.appendChild(mask);
+
+  // Apply the mask to all road elements
+  var shoulder = document.getElementById('road-shoulder');
+  if (shoulder) shoulder.setAttribute('mask', 'url(#node-mask)');
+  var center = document.getElementById('road-center');
+  if (center) center.setAttribute('mask', 'url(#node-mask)');
+  document.querySelectorAll('#spmt-svg .road-seg').forEach(function (p) {
+    p.setAttribute('mask', 'url(#node-mask)');
+  });
+}
+
+// ─────────── Scrubber / Progress Bar (simplified native range) ───────────
+var scrubSyncId = null;
+var scrubDragging = false;
+
+function initScrubber() {
+  buildScrubberPhases();
+  var range = document.getElementById('scrubber-range');
+  if (!range) return;
+  // Mark when user is actively dragging the scrubber
+  range.addEventListener('mousedown',  function () { scrubDragging = true; });
+  range.addEventListener('touchstart', function () { scrubDragging = true; });
+  document.addEventListener('mouseup',  function () { scrubDragging = false; });
+  document.addEventListener('touchend', function () { scrubDragging = false; });
+  // Start sync loop
+  startScrubSyncLoop();
+}
+
+// User drags scrubber → seek animation to that %
+function onScrubberInput(val) {
+  var pct = parseFloat(val) / 10; // range 0-1000 → 0-100%
+  seekToPercent(pct);
+}
+
+function seekToPercent(pct) {
+  pct = Math.max(0, Math.min(100, pct));
+  var g = document.querySelector('.spmt-group');
+  var barge = document.querySelector('.barge-group');
+  if (!g) return;
+  var durSec = SPMT_BASE_DUR / spmtSpeed;
+  var elapsed = (pct / 100) * durSec;
+
+  // Ensure animation classes are applied
+  if (!g.classList.contains('running')) {
+    g.style.setProperty('--spmt-dur', durSec + 's');
+    if (barge) barge.style.setProperty('--spmt-dur', durSec + 's');
+  }
+
+  function applySeek(el) {
+    if (!el) return;
+    el.classList.remove('running');
+    el.style.setProperty('--spmt-dur', durSec + 's');
+    el.style.animationDelay = (-elapsed) + 's';
+    el.style.animationPlayState = 'paused';
+    void el.getBoundingClientRect();
+    el.classList.add('running');
+    el.style.animationPlayState = 'paused';
+  }
+  applySeek(g);
+  applySeek(barge);
+  spmtPlaying = true;
+  spmtPaused = true;
+  updatePauseBtnUI();
+  updateScrubberLabels(pct);
+  updateSpmtStatus('⏸ ' + pct.toFixed(0) + '% · ' + getNodeAtPct(pct));
+}
+
+function getNodeAtPct(pct) {
+  if (!window.SPMT_NODES || !window.SPMT_NODES.length) return '';
+  var idx = Math.round((pct / 100) * (window.SPMT_NODES.length - 1));
+  idx = Math.max(0, Math.min(window.SPMT_NODES.length - 1, idx));
+  return 'No.' + window.SPMT_NODES[idx].no;
+}
+
+function updateScrubberLabels(pct) {
+  var curLbl = document.getElementById('scrub-cur');
+  var nodeLbl = document.getElementById('scrub-node');
+  if (curLbl) curLbl.textContent = pct.toFixed(0) + '%';
+  if (nodeLbl) nodeLbl.textContent = getNodeAtPct(pct);
+}
+
+// Lightweight sync loop — reads offset-distance and updates range slider
+function startScrubSyncLoop() {
+  var counter = 0;
+  function tick() {
+    scrubSyncId = requestAnimationFrame(tick);
+    if (scrubDragging || !spmtPlaying || spmtPaused) return;
+    counter++;
+    if (counter % 3 !== 0) return; // throttle to ~20fps
+    var g = document.querySelector('.spmt-group');
+    if (!g || !g.classList.contains('running')) return;
+    try {
+      var od = window.getComputedStyle(g).offsetDistance || '0%';
+      var m = od.match(/([\d.]+)\s*%/);
+      if (!m) return;
+      var distPct = parseFloat(m[1]);
+      var range = document.getElementById('scrubber-range');
+      if (range) range.value = distPct * 10;
+      updateScrubberLabels(distPct);
+    } catch (e) {}
+  }
+  if (scrubSyncId) cancelAnimationFrame(scrubSyncId);
+  scrubSyncId = requestAnimationFrame(tick);
+}
+
+function buildScrubberPhases() {
+  var el = document.getElementById('scrubber-phases');
+  if (!el || !window.SPMT_NODES) return;
+  el.innerHTML = '';
+  var phaseColors = {
+    'PM': '#42a5f5', 'EN': '#ffca28', 'PR': '#ff7043',
+    'FB': '#66bb6a', 'TR': '#ab47bc', 'IN': '#ef5350'
+  };
+  var groups = [], cur = { phase: window.SPMT_NODES[0].phase, n: 1 };
+  for (var i = 1; i < window.SPMT_NODES.length; i++) {
+    if (window.SPMT_NODES[i].phase === cur.phase) { cur.n++; }
+    else { groups.push(cur); cur = { phase: window.SPMT_NODES[i].phase, n: 1 }; }
+  }
+  groups.push(cur);
+  groups.forEach(function (g) {
+    var seg = document.createElement('div');
+    seg.className = 'scrubber-phase-seg';
+    seg.style.flex = g.n;
+    seg.style.background = phaseColors[g.phase] || '#546e7a';
+    el.appendChild(seg);
+  });
+}
+
+// ─────────── Cover Image → Workflow Transition ───────────
+function dismissCover() {
+  var cover = document.getElementById('tl-cover-wrap');
+  var main  = document.getElementById('tl-main-wrap');
+  if (!cover || !main) return;
+  if (main.classList.contains('revealed')) return; // already dismissed
+
+  // Step 1: Cover starts fading (becomes semi-transparent)
+  cover.classList.add('fading');
+
+  // Step 2: Workflow fades IN on top (opacity 0→1 over 1.2s)
+  // Small delay so user sees cover dimming first
+  setTimeout(function () {
+    main.classList.add('revealed');
+  }, 200);
+
+  // Step 3: After transition completes, hide cover & switch to flow layout
+  setTimeout(function () {
+    cover.classList.add('hidden');
+    main.classList.add('flow'); // position: relative → page height adjusts
+    updateSpmtStatus('대기 중 · ▶ Play 버튼을 눌러 시뮬레이션을 시작하세요');
+  }, 1500);
+}
+
+// ─────────── Layout Persistence (Save / Load / Reset) ───────────
+// Storage key for localStorage (per-browser persistence)
+var SPMT_LAYOUT_KEY = 'spmt-layout-v1';
+
+// Snapshot of factory-shipped defaults (frozen at page load — never modified)
+window.FACTORY_DEFAULT_SPMT_POS = JSON.parse(JSON.stringify(window.DEFAULT_SPMT_POS));
+
+// Snapshot current node positions + midpoints into a plain JSON object
+function snapshotLayout() {
+  var nodes = {};
+  (window.SPMT_NODES || []).forEach(function (nd) {
+    nodes[nd.no] = { x: Math.round(nd.x * 10) / 10, y: Math.round(nd.y * 10) / 10 };
+  });
+  var mids = {};
+  (window.SPMT_SEGS || []).forEach(function (seg) {
+    mids[seg.idx] = {
+      x: Math.round(seg.midX * 10) / 10,
+      y: Math.round(seg.midY * 10) / 10
+    };
+  });
+  return {
+    version: 1,
+    savedAt: new Date().toISOString(),
+    nodes: nodes,
+    midpoints: mids
+  };
+}
+
+// Restore layout from a snapshot object (same shape as snapshotLayout)
+function restoreLayout(snap) {
+  if (!snap || !snap.nodes) return false;
+  // Nodes
+  (window.SPMT_NODES || []).forEach(function (nd, i) {
+    var p = snap.nodes[nd.no];
+    if (!p) return;
+    var cp = clampPos(p);
+    nd.x = cp.x;
+    nd.y = cp.y;
+    var el = document.getElementById('node-' + i);
+    if (el) el.setAttribute('transform', 'translate(' + cp.x.toFixed(1) + ',' + cp.y.toFixed(1) + ')');
+  });
+  // Midpoints
+  if (snap.midpoints) {
+    (window.SPMT_SEGS || []).forEach(function (seg) {
+      var m = snap.midpoints[seg.idx];
+      if (!m) return;
+      var cm = clampPos(m);
+      seg.midX = cm.x;
+      seg.midY = cm.y;
+      var h = document.querySelector('.mid-handle[data-seg="' + seg.idx + '"]');
+      if (h) {
+        h.setAttribute('cx', cm.x.toFixed(1));
+        h.setAttribute('cy', cm.y.toFixed(1));
+      }
+      updateSegmentElement(seg.idx);
+    });
+  } else {
+    // Midpoints missing — auto-regenerate gentle curves
+    regenerateGentleMidpoints();
+  }
+  updateContinuousPaths();
+  setTimeout(function () {
+    computeBridges();
+    updateSeaVisibilityKeyframes();
+  }, 10);
+  return true;
+}
+
+// Auto-regenerate small perpendicular midpoints for every segment
+function regenerateGentleMidpoints() {
+  var waveDir = 1;
+  (window.SPMT_SEGS || []).forEach(function (seg) {
+    var a = window.SPMT_NODES[seg.from];
+    var b = window.SPMT_NODES[seg.to];
+    var dx = b.x - a.x;
+    var dy = b.y - a.y;
+    var len = Math.hypot(dx, dy);
+    if (len < 1) {
+      seg.midX = (a.x + b.x) / 2;
+      seg.midY = (a.y + b.y) / 2;
+    } else {
+      var nx = -dy / len;
+      var ny = dx / len;
+      var amp = Math.min(10, len * 0.08) * waveDir;
+      seg.midX = (a.x + b.x) / 2 + nx * amp;
+      seg.midY = (a.y + b.y) / 2 + ny * amp;
+      waveDir *= -1;
+    }
+    var h = document.querySelector('.mid-handle[data-seg="' + seg.idx + '"]');
+    if (h) {
+      h.setAttribute('cx', seg.midX.toFixed(1));
+      h.setAttribute('cy', seg.midY.toFixed(1));
+    }
+    updateSegmentElement(seg.idx);
+  });
+}
+
+// ── Save: current layout → localStorage + JSON file download ──
+function saveLayoutAsDefault() {
+  var snap = snapshotLayout();
+  try {
+    localStorage.setItem(SPMT_LAYOUT_KEY, JSON.stringify(snap));
+  } catch (e) {
+    console.warn('localStorage save failed:', e);
+  }
+  // Download as JSON file for git commit
+  var blob = new Blob([JSON.stringify(snap, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'spmt-layout.json';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function () {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 100);
+  updateLayoutStatus('✅ 저장 완료 · 브라우저 캐시 + spmt-layout.json 다운로드됨');
+  showLayoutInstructions();
+}
+
+// ── Load: from uploaded JSON file ──
+function loadLayoutFromFile(evt) {
+  var file = evt.target.files && evt.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      var snap = JSON.parse(e.target.result);
+      if (restoreLayout(snap)) {
+        try { localStorage.setItem(SPMT_LAYOUT_KEY, JSON.stringify(snap)); } catch (_) {}
+        updateLayoutStatus('📂 불러오기 완료 · ' + (snap.savedAt || '날짜 미기록'));
+      } else {
+        updateLayoutStatus('⚠ 잘못된 Layout 파일 (nodes 필드 누락)');
+      }
+    } catch (err) {
+      updateLayoutStatus('❌ JSON 파싱 실패: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  // Reset input so same file can be reloaded
+  evt.target.value = '';
+}
+
+// ── Reset: clear saved layout and return to factory default ──
+function resetLayoutToFactory() {
+  if (!confirm('저장된 배치를 모두 삭제하고 원본 Default로 돌아갈까요?')) return;
+  try { localStorage.removeItem(SPMT_LAYOUT_KEY); } catch (_) {}
+  // Restore factory defaults into the active map
+  window.DEFAULT_SPMT_POS = JSON.parse(JSON.stringify(window.FACTORY_DEFAULT_SPMT_POS));
+  applyDefaultPositions();
+  updateLayoutStatus('🔄 원본 Default 배치로 복원됨');
+}
+
+function updateLayoutStatus(msg) {
+  var el = document.getElementById('spmt-layout-status');
+  if (el) el.textContent = msg;
+}
+
+function showLayoutInstructions() {
+  var msg =
+    '✅ Layout이 저장되었습니다!\n\n' +
+    '1. 이 브라우저에는 이미 자동 저장됨 (새로고침해도 유지)\n' +
+    '2. 다른 사용자에게도 반영하려면 다운로드된 spmt-layout.json 파일을:\n' +
+    '   → 프로젝트 폴더에 복사\n' +
+    '   → git add spmt-layout.json\n' +
+    '   → git commit -m "Update layout"\n' +
+    '   → git push\n\n' +
+    '파일이 같은 폴더에 있으면 모든 사용자의 페이지 로드 시 자동 적용됩니다.';
+  setTimeout(function () { alert(msg); }, 150);
+}
+
+// Try to load layout in priority order:
+// 1. localStorage (this browser)
+// 2. spmt-layout.json file next to HTML (shared via git)
+// 3. Fall through to factory DEFAULT_SPMT_POS
+function loadSavedLayoutOrFile(cb) {
+  // 1. localStorage
+  try {
+    var raw = localStorage.getItem(SPMT_LAYOUT_KEY);
+    if (raw) {
+      var snap = JSON.parse(raw);
+      if (snap && snap.nodes) {
+        updateLayoutStatus('✅ 브라우저 저장 Layout 적용 · ' + (snap.savedAt || ''));
+        cb && cb(snap);
+        return;
+      }
+    }
+  } catch (e) {}
+
+  // 2. Try fetching spmt-layout.json next to this HTML
+  try {
+    fetch('spmt-layout.json', { cache: 'no-store' })
+      .then(function (r) { if (r.ok) return r.json(); throw new Error('no file'); })
+      .then(function (snap) {
+        if (snap && snap.nodes) {
+          updateLayoutStatus('📁 spmt-layout.json 로드 · ' + (snap.savedAt || ''));
+          cb && cb(snap);
+        } else {
+          cb && cb(null);
+        }
+      })
+      .catch(function () {
+        updateLayoutStatus('저장된 Layout 없음 · 원본 Default 사용 중');
+        cb && cb(null);
+      });
+  } catch (e) {
+    cb && cb(null);
+  }
+}
+
+// Apply default positions to nodes + reset midpoints to gentle curves
+function applyDefaultPositions() {
+  if (!window.SPMT_NODES || !window.DEFAULT_SPMT_POS) return;
+  // Update node x/y from DEFAULT_SPMT_POS (with bounds clamping)
+  window.SPMT_NODES.forEach(function (nd, i) {
+    var p = window.DEFAULT_SPMT_POS[nd.no];
+    if (!p) return;
+    var cp = clampPos(p);
+    nd.x = cp.x;
+    nd.y = cp.y;
+    // Update DOM transform
+    var el = document.getElementById('node-' + i);
+    if (el) el.setAttribute('transform', 'translate(' + cp.x.toFixed(1) + ',' + cp.y.toFixed(1) + ')');
+  });
+  // Reset every midpoint to a small perpendicular offset alternating sign
+  // so curves remain gentle and don't produce wild loops after drastic moves.
+  var waveDir = 1;
+  window.SPMT_SEGS.forEach(function (seg) {
+    var a = window.SPMT_NODES[seg.from];
+    var b = window.SPMT_NODES[seg.to];
+    var dx = b.x - a.x;
+    var dy = b.y - a.y;
+    var len = Math.hypot(dx, dy);
+    if (len < 1) {
+      seg.midX = (a.x + b.x) / 2;
+      seg.midY = (a.y + b.y) / 2;
+    } else {
+      var nx = -dy / len;
+      var ny = dx / len;
+      // Small amplitude — nodes themselves already create the curvy layout
+      var amp = Math.min(10, len * 0.08) * waveDir;
+      seg.midX = (a.x + b.x) / 2 + nx * amp;
+      seg.midY = (a.y + b.y) / 2 + ny * amp;
+      waveDir *= -1;
+    }
+    // Update mid-handle circle
+    var h = document.querySelector('.mid-handle[data-seg="' + seg.idx + '"]');
+    if (h) {
+      h.setAttribute('cx', seg.midX.toFixed(1));
+      h.setAttribute('cy', seg.midY.toFixed(1));
+    }
+    // Update segment path
+    updateSegmentElement(seg.idx);
+  });
+  // Update continuous road paths + SPMT/Barge offset-path
+  updateContinuousPaths();
+  // Rebuild node mask so road is hidden inside node circles
+  buildNodeMask();
+  // Recompute bridges and sea range
+  setTimeout(function () {
+    computeBridges();
+    updateSeaVisibilityKeyframes();
+  }, 10);
+}
+
 // Initialize drag handlers + barge sync when page 3 is shown (or on load)
 function initSpmtExtras() {
-  // Sync barge offset-path with SPMT's initial path
-  var spmt = document.querySelector('.spmt-group');
-  var barge = document.querySelector('.barge-group');
-  if (spmt && barge) {
-    var op = spmt.style.offsetPath || window.getComputedStyle(spmt).offsetPath;
-    if (op && op !== 'none') barge.style.offsetPath = op;
-  }
-  updateSeaVisibilityKeyframes();
+  // Priority: (1) localStorage → (2) spmt-layout.json → (3) factory defaults
+  loadSavedLayoutOrFile(function (snap) {
+    if (snap) {
+      // Apply factory defaults first so any missing nodes fall back gracefully
+      try { applyDefaultPositions(); } catch (e) {}
+      // Then overlay saved layout
+      try { restoreLayout(snap); } catch (e) { console.warn('restoreLayout:', e); }
+    } else {
+      try { applyDefaultPositions(); } catch (e) { console.warn('applyDefaultPositions:', e); }
+    }
+    // Sync barge offset-path with SPMT's initial path
+    var spmt = document.querySelector('.spmt-group');
+    var barge = document.querySelector('.barge-group');
+    if (spmt && barge) {
+      var op = spmt.style.offsetPath || window.getComputedStyle(spmt).offsetPath;
+      if (op && op !== 'none') barge.style.offsetPath = op;
+    }
+    updateSeaVisibilityKeyframes();
+  });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
   attachNodeDragHandlers();
   attachMidHandlers();
   initSpmtExtras();
-  setTimeout(computeBridges, 300);
-  setTimeout(updateSeaVisibilityKeyframes, 320);
+  setTimeout(function () {
+    computeBridges();
+    updateSeaVisibilityKeyframes();
+    initScrubber();
+  }, 300);
 });
-// Also attach immediately if script runs after DOM is ready
 if (document.readyState !== 'loading') {
   setTimeout(function () {
     attachNodeDragHandlers();
@@ -4117,6 +5157,7 @@ if (document.readyState !== 'loading') {
     initSpmtExtras();
     computeBridges();
     updateSeaVisibilityKeyframes();
+    initScrubber();
   }, 100);
 }
 
@@ -4299,6 +5340,124 @@ function renderDash1() {
       discsEl.appendChild(row);
     });
   }
+
+  // ── Donut Chart 1: Activity 구성 (주 vs 세부) ──
+  renderDonut('dash1-donut-activity', [
+    { label: '주 Activity',  value: stats.mainAct, color: '#1976d2' },
+    { label: '세부 Activity', value: stats.subAct,  color: '#90caf9' }
+  ], stats.total);
+
+  // ── Donut Chart 2: Stage 별 Activity ──
+  var stageDonutData = [];
+  var stageDonutColors = ['#1976d2', '#f9a825', '#7b1fa2', '#ef5350', '#66bb6a'];
+  stats.stages.forEach(function (s, i) {
+    var shortName = s.name.replace(/^▣\s*/, '').replace(/\s*\(.*\)\s*$/, '');
+    stageDonutData.push({
+      label: shortName,
+      value: s.count,
+      color: stageDonutColors[i % stageDonutColors.length],
+      row: s.row
+    });
+  });
+  renderDonut('dash1-donut-stage', stageDonutData, stats.total);
+}
+
+// ── SVG Donut Chart Generator ──
+function renderDonut(containerId, slices, total) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  if (!slices.length || total <= 0) return;
+
+  var SIZE = 180;
+  var CX = 90, CY = 90;
+  var R = 70;         // outer radius (2x bigger)
+  var STROKE = 22;    // donut thickness
+  var CIRC = 2 * Math.PI * R;
+
+  var NS = 'http://www.w3.org/2000/svg';
+  var svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('width', SIZE);
+  svg.setAttribute('height', SIZE);
+  svg.setAttribute('viewBox', '0 0 ' + SIZE + ' ' + SIZE);
+
+  // Background ring (light gray)
+  var bgCircle = document.createElementNS(NS, 'circle');
+  bgCircle.setAttribute('cx', CX);
+  bgCircle.setAttribute('cy', CY);
+  bgCircle.setAttribute('r', R);
+  bgCircle.setAttribute('fill', 'none');
+  bgCircle.setAttribute('stroke', '#e0e0e0');
+  bgCircle.setAttribute('stroke-width', STROKE);
+  svg.appendChild(bgCircle);
+
+  // Slices
+  var offset = 0;
+  slices.forEach(function (s) {
+    if (s.value <= 0) return;
+    var pct = s.value / total;
+    var dashLen = pct * CIRC;
+    var gapLen = CIRC - dashLen;
+
+    var circle = document.createElementNS(NS, 'circle');
+    circle.setAttribute('cx', CX);
+    circle.setAttribute('cy', CY);
+    circle.setAttribute('r', R);
+    circle.setAttribute('fill', 'none');
+    circle.setAttribute('stroke', s.color);
+    circle.setAttribute('stroke-width', STROKE);
+    circle.setAttribute('stroke-dasharray', dashLen.toFixed(2) + ' ' + gapLen.toFixed(2));
+    circle.setAttribute('stroke-dashoffset', (-offset).toFixed(2));
+    circle.setAttribute('stroke-linecap', 'butt');
+    // Rotate -90deg so first slice starts at top
+    circle.setAttribute('transform', 'rotate(-90 ' + CX + ' ' + CY + ')');
+    circle.style.transition = 'stroke-dasharray 0.4s ease';
+    svg.appendChild(circle);
+
+    offset += dashLen;
+  });
+
+  // Center text (total)
+  var txt = document.createElementNS(NS, 'text');
+  txt.setAttribute('x', CX);
+  txt.setAttribute('y', CY + 1);
+  txt.setAttribute('text-anchor', 'middle');
+  txt.setAttribute('dominant-baseline', 'middle');
+  txt.setAttribute('fill', '#1a3d7c');
+  txt.setAttribute('font-size', '30');
+  txt.setAttribute('font-weight', '900');
+  txt.setAttribute('font-family', 'Arial, sans-serif');
+  txt.textContent = total;
+  svg.appendChild(txt);
+
+  var txtSub = document.createElementNS(NS, 'text');
+  txtSub.setAttribute('x', CX);
+  txtSub.setAttribute('y', CY + 20);
+  txtSub.setAttribute('text-anchor', 'middle');
+  txtSub.setAttribute('fill', '#90a4ae');
+  txtSub.setAttribute('font-size', '11');
+  txtSub.setAttribute('font-family', 'Arial, sans-serif');
+  txtSub.textContent = 'total';
+  svg.appendChild(txtSub);
+
+  container.appendChild(svg);
+
+  // Legend
+  var legend = document.createElement('div');
+  legend.className = 'dash-donut-legend';
+  slices.forEach(function (s) {
+    var row = document.createElement('div');
+    row.className = 'dl-row';
+    row.innerHTML =
+      '<span class="dl-dot" style="background:' + s.color + '"></span>' +
+      '<span>' + s.label + '</span>' +
+      '<span class="dl-val">' + s.value + '</span>';
+    if (s.row) {
+      row.addEventListener('click', function () { flashRow(s.row, null); });
+    }
+    legend.appendChild(row);
+  });
+  container.appendChild(legend);
 }
 
 // ───────── Page 2 Parser ─────────
@@ -4474,6 +5633,38 @@ function renderDash2() {
       discsEl.appendChild(row);
     });
   }
+
+  // ── Donut Chart 1: Activity 구성 (● 주관 vs ○ 지원) ──
+  renderDonut('dash2-donut-activity', [
+    { label: '● 주관 합계', value: totalMain, color: '#2e7d32' },
+    { label: '○ 지원 합계', value: totalSub,  color: '#a5d6a7' }
+  ], totalMain + totalSub);
+
+  // ── Donut Chart 2: Phase 별 Activity ──
+  var phaseDonutColors = {
+    'Project Management': '#1976d2',
+    'Engineering':        '#f9a825',
+    'Procurement':        '#e64a19',
+    'Fabrication':        '#388e3c',
+    'Transportation':     '#7b1fa2',
+    'Installation':       '#c62828'
+  };
+  var phaseDonutData = [];
+  stats.phaseOrder.forEach(function (name) {
+    var info = stats.phases[name];
+    var shortName = name;
+    var color = '#455a64';
+    Object.keys(phaseDonutColors).forEach(function (k) {
+      if (name.indexOf(k) !== -1) { shortName = k; color = phaseDonutColors[k]; }
+    });
+    phaseDonutData.push({
+      label: shortName,
+      value: info.count,
+      color: color,
+      row: info.firstRow
+    });
+  });
+  renderDonut('dash2-donut-phase', phaseDonutData, stats.total);
 }
 
 function initDashboards() {
