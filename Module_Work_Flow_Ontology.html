@@ -1943,13 +1943,17 @@ function goToWorkflow() {
 }
 
 // ========== LOGIN & PAGE NAVIGATION ==========
-const _U = {id:'mfc', pw:'mfc2026'};
+const _SUB_HASH = '1ba7e9226fa19275af643dfadff5bc7f0740692f9c4d24ce3a617fdc794b2f37'; // ModuleSolution:Modularization2
 
-function doLogin() {
+async function doLogin() {
   const id = document.getElementById('login-id').value.trim();
   const pw = document.getElementById('login-pw').value;
-  if (id === _U.id && pw === _U.pw) {
+  const buf = new TextEncoder().encode(id + ':' + pw);
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  const hex = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
+  if (hex === _SUB_HASH) {
     sessionStorage.setItem('loggedIn', id);
+    sessionStorage.setItem('sub-auth-ok', '1');
     showMain(id);
   } else {
     document.getElementById('login-error').style.display = 'block';
