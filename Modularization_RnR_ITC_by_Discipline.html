@@ -1834,9 +1834,9 @@
     <span style="color:#c00;">— Full-Time</span> = primary support, <span style="color:#666;">--- Part-Time</span> = secondary support
   </div>
 
-  <svg class="future-org-svg" viewBox="0 0 1100 680" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:1100px;display:block;margin:10px auto;font-family:'Malgun Gothic',Arial,sans-serif;">
+  <svg class="future-org-svg" viewBox="0 0 1100 490" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:1100px;display:block;margin:10px auto;font-family:'Malgun Gothic',Arial,sans-serif;">
     <!-- Background -->
-    <rect width="1100" height="680" fill="#fafbfd" rx="6"/>
+    <rect width="1100" height="490" fill="#fafbfd" rx="6"/>
 
     <!-- Title -->
     <rect x="410" y="10" width="280" height="30" rx="4" fill="#1a3d7c" stroke="#0d1b3d" stroke-width="1.5"/>
@@ -1948,6 +1948,51 @@
       <text x="850" y="256">PRE-COMMISSIONING</text>
       <text x="850" y="272">COMMISSIONING &amp; START-UP</text>
     </g>
+
+    <!-- ═══ Connection Lines (draw.io 원본 기반) ═══ -->
+
+    <!-- Project Support items → Module Team (gray dashed) -->
+    <line x1="145" y1="175" x2="205" y2="185" stroke="#999" stroke-width="1" stroke-dasharray="4 3"/>
+    <line x1="145" y1="189" x2="205" y2="185" stroke="#999" stroke-width="1" stroke-dasharray="4 3"/>
+    <line x1="145" y1="203" x2="205" y2="185" stroke="#999" stroke-width="1" stroke-dasharray="4 3"/>
+    <line x1="145" y1="217" x2="205" y2="185" stroke="#999" stroke-width="1" stroke-dasharray="4 3"/>
+    <line x1="145" y1="231" x2="205" y2="185" stroke="#999" stroke-width="1" stroke-dasharray="4 3"/>
+    <line x1="145" y1="245" x2="205" y2="185" stroke="#999" stroke-width="1" stroke-dasharray="4 3"/>
+    <line x1="145" y1="259" x2="205" y2="185" stroke="#999" stroke-width="1" stroke-dasharray="4 3"/>
+    <line x1="145" y1="273" x2="205" y2="185" stroke="#999" stroke-width="1" stroke-dasharray="4 3"/>
+
+    <!-- Module Team → Engineering: STRUCTURAL/PIPING red dashed with flow -->
+    <line x1="410" y1="282" x2="460" y2="240" stroke="#c62828" stroke-width="1.5" stroke-dasharray="6 3"/>
+    <line x1="410" y1="298" x2="460" y2="256" stroke="#c62828" stroke-width="1.5" stroke-dasharray="6 3"/>
+
+    <!-- Module Team → Engineering: Shared (gray dashed) -->
+    <line x1="410" y1="314" x2="460" y2="288" stroke="#999" stroke-width="1" stroke-dasharray="4 3"/>
+    <line x1="410" y1="330" x2="460" y2="304" stroke="#999" stroke-width="1" stroke-dasharray="4 3"/>
+    <line x1="410" y1="346" x2="460" y2="320" stroke="#999" stroke-width="1" stroke-dasharray="4 3"/>
+    <line x1="410" y1="362" x2="460" y2="336" stroke="#999" stroke-width="1" stroke-dasharray="4 3"/>
+
+    <!-- Module Team → Construction Manager (RED dashed, large U-turn loop at bottom) -->
+    <!-- This is the prominent red dashed line from draw.io that loops around the bottom -->
+    <path d="M 300 410 L 300 460 L 950 460 L 950 280"
+          fill="none" stroke="#c62828" stroke-width="1.8" stroke-dasharray="8 4">
+      <animate attributeName="stroke-dashoffset" from="0" to="-24" dur="1.5s" repeatCount="indefinite"/>
+    </path>
+    <!-- Arrow tip at Construction Technical Services -->
+    <polygon points="945,282 950,272 955,282" fill="#c62828"/>
+    <!-- Label on the red dashed line -->
+    <text x="620" y="455" text-anchor="middle" fill="#c62828" font-size="8" font-style="italic">Module ↔ Construction Coordination</text>
+
+    <!-- Module Coordinator → Specific Modules Design Team (green dashed) -->
+    <line x1="300" y1="200" x2="300" y2="210" stroke="#66bb6a" stroke-width="1.2" stroke-dasharray="4 3"/>
+
+    <!-- Engineering Manager → Overall Design Team (solid) -->
+    <line x1="580" y1="162" x2="580" y2="180" stroke="#1a3d7c" stroke-width="1.2"/>
+
+    <!-- Engineering Manager → Modules Design Team (dashed) -->
+    <line x1="540" y1="162" x2="410" y2="225" stroke="#999" stroke-width="1" stroke-dasharray="4 3"/>
+
+    <!-- Construction Manager → Construction Technical Services (solid) -->
+    <line x1="950" y1="162" x2="950" y2="180" stroke="#1a3d7c" stroke-width="1.2"/>
 
     <!-- "FUTURE" badge -->
     <rect x="945" y="14" width="70" height="22" rx="11" fill="#ff5722"/>
