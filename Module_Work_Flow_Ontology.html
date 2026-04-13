@@ -1,0 +1,1996 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1900">
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
+<title>Module Project Workflow - MFC PAR Module Ontology</title>
+<script>try{if(sessionStorage.getItem('mod-rnr-auth')!=='ok')window.location.href='index.html';}catch(e){window.location.href='index.html';}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Malgun Gothic','Segoe UI',sans-serif;font-size:10px;background:#e0e0e0;color:#333}
+.page{width:1860px;margin:8px auto;background:#fff;border:1px solid #888;box-shadow:0 2px 10px rgba(0,0,0,.2)}
+.title-bar{background:linear-gradient(135deg,#1a1a3e,#2c2c54);color:#fff;text-align:center;padding:12px 20px;border-bottom:3px solid #c00}
+.title-bar h1{font-size:18px;letter-spacing:3px;text-decoration:underline}
+.title-bar .sub{font-size:11px;color:#ffd700;margin-top:2px}
+.ctrl{background:#f5f5f5;padding:5px 16px;border-bottom:1px solid #ccc;display:flex;justify-content:space-between;align-items:center;font-size:10px;flex-wrap:wrap;gap:4px}
+.ctrl button{font-size:9px;padding:2px 8px;background:#2c2c54;color:#fff;border:none;border-radius:2px;cursor:pointer}
+.ctrl button:hover{background:#5a5a9a}
+#status{font-style:italic;color:#888}
+
+table.main{width:100%;border-collapse:collapse;table-layout:fixed}
+table.main td,table.main th{border:1px solid #bbb;vertical-align:top;padding:0}
+col.c-phase{width:40px}col.c-stage{width:45px}col.c-sub{width:55px}
+
+.vlbl{writing-mode:vertical-rl;text-orientation:mixed;font-weight:bold;text-align:center;padding:4px 2px;letter-spacing:2px}
+.vlbl-phase{font-size:14px;letter-spacing:4px}
+.vlbl-stage{font-size:11px}
+.vlbl-sub{font-size:10px}
+
+.bg-feed{background:linear-gradient(to bottom,#1a1a4e,#2a2a6e);color:#fff}
+.bg-exec{background:linear-gradient(to bottom,#333366,#4a4a8a);color:#fff}
+.bg-ps{background:#e8d0ff;color:#4a0080}
+.bg-eng{background:#fff3cd;color:#856404}
+.bg-fab{background:#d4edda;color:#155724}
+.bg-ti{background:#f8d7da;color:#721c24}
+.bg-sub1{background:#f3e5f5;color:#6a1b9a}
+.bg-sub2{background:#fff8e1;color:#f57f17}
+.bg-sub3{background:#e8f5e9;color:#2e7d32}
+.bg-sub4{background:#fce4ec;color:#c62828}
+
+th.dh{font-weight:bold;font-size:11px;text-align:center;padding:8px 4px;color:#fff}
+th.dh-ct{background:#4a148c}th.dh-pm{background:#1565c0}
+th.dh-eng{background:#f9a825;color:#333}th.dh-proc{background:#2e7d32}
+th.dh-const{background:#d84315}th.dh-qhse{background:#6a1b9a}
+
+.cell{padding:3px 4px;min-height:30px}
+
+/* Activity row - table-like layout with check column */
+.act{display:flex;align-items:flex-start;margin:1px 0;border-radius:2px;font-size:9.5px;line-height:1.3;cursor:pointer;transition:background .1s}
+.act:hover{filter:brightness(.92)}
+.act .chk-col{min-width:28px;width:28px;text-align:center;flex-shrink:0;padding:2px 0;font-size:10px;font-weight:bold}
+.act .act-body{flex:1;padding:2px 3px}
+.act .n{font-weight:bold}
+.si .act-body{margin-left:8px}
+
+/* Colors from PDF */
+.cr{color:#c00;font-weight:bold}.cm{color:#cc00cc;font-weight:bold}
+.cb{color:#0000cc}.ck{color:#333}.cg{color:#aaa}
+.chk-r{color:#c00}.chk-m{color:#cc00cc}.chk-b{color:#0066cc}
+
+.fc{display:inline-block;font-size:7px;padding:0 3px;border-radius:6px;margin-left:2px;font-weight:bold;vertical-align:middle}
+.fc-g{background:#4caf50;color:#fff}.fc-x{background:#ddd;color:#999}
+
+/* File list */
+.fl{display:none;margin:1px 0 1px 8px;padding:2px 4px;background:#f9f9f9;border:1px solid #eee;border-radius:2px;font-size:8px;color:#666;max-height:200px;overflow-y:auto}
+.fl.show{display:block}
+.fl .f{padding:1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fl .ext{color:#0066cc;font-weight:bold}
+
+.pct{font-size:7px;padding:1px 3px;border-radius:2px;color:#fff;margin-left:2px;font-weight:bold}
+.p100{background:#4caf50}.p95{background:#8bc34a}.p90{background:#cddc39;color:#333}
+.p82{background:#ff9800}.p80{background:#ff9800}.p50{background:#ff5722}.p0{background:#9e9e9e}
+
+@media print{.ctrl{display:none}.page{width:100%;box-shadow:none;border:none}}
+
+/* Login overlay */
+#login-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#1a1a3e,#2c2c54);display:flex;align-items:center;justify-content:center;z-index:9999}
+#login-box{background:#fff;padding:40px 50px;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.4);text-align:center;min-width:360px}
+#login-box h2{font-size:18px;color:#1a1a3e;margin-bottom:6px;letter-spacing:2px}
+#login-box .login-sub{font-size:11px;color:#888;margin-bottom:24px}
+#login-box input{display:block;width:100%;padding:10px 12px;margin-bottom:14px;border:1px solid #ccc;border-radius:4px;font-size:13px;font-family:inherit}
+#login-box input:focus{outline:none;border-color:#4a148c;box-shadow:0 0 4px rgba(74,20,140,.3)}
+#login-box button{width:100%;padding:10px;background:linear-gradient(135deg,#1a1a3e,#4a148c);color:#fff;border:none;border-radius:4px;font-size:14px;cursor:pointer;letter-spacing:1px}
+#login-box button:hover{background:linear-gradient(135deg,#2c2c54,#6a1b9a)}
+#login-error{color:#c00;font-size:11px;margin-top:8px;display:none}
+
+/* Page navigation tabs */
+#page-nav{background:#1a1a3e;padding:0 20px;display:flex;gap:0;border-bottom:3px solid #c00}
+#page-nav .tab{padding:10px 24px;color:#aaa;font-size:12px;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-3px;font-weight:bold;letter-spacing:1px}
+#page-nav .tab:hover{color:#fff;background:rgba(255,255,255,.05)}
+#page-nav .tab.active{color:#ffd700;border-bottom-color:#ffd700;background:rgba(255,255,255,.08)}
+#page-nav .nav-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+#page-nav .nav-user{color:#aaa;font-size:10px}
+#page-nav .nav-logout{color:#ff6b6b;font-size:10px;cursor:pointer;text-decoration:underline}
+#page-nav .nav-logout:hover{color:#ff4444}
+
+.page-section{display:none}
+.page-section.active{display:block}
+</style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay">
+  <div id="login-box">
+    <h2>MFC PAR Module</h2>
+    <div class="login-sub">Ontology & Document Management</div>
+    <input type="text" id="login-id" placeholder="ID" autocomplete="off">
+    <input type="password" id="login-pw" placeholder="Password" autocomplete="off">
+    <button onclick="doLogin()">Login</button>
+    <div id="login-error">ID 또는 Password가 올바르지 않습니다.</div>
+  </div>
+</div>
+
+<div id="main-content" style="display:none">
+<div class="page">
+
+<!-- PAGE NAVIGATION -->
+<div id="page-nav">
+  <div class="tab active" onclick="switchPage('dashboard')">Dashboard</div>
+  <div class="tab" onclick="switchPage('workflow')">Work Flow</div>
+  <div class="nav-right">
+    <span class="nav-user" id="nav-user"></span>
+    <span class="nav-logout" onclick="doLogout()">Logout</span>
+  </div>
+</div>
+
+<!-- PAGE 1: DASHBOARD -->
+<div id="page-dashboard" class="page-section active">
+
+<span id="status" style="display:none"></span>
+
+<div style="overflow-y:auto;height:calc(100vh - 80px)">
+  <!-- TOP: Dashboard 1 - Activity & Data -->
+  <div id="dashboard" style="padding:10px 14px;background:#fafafa;border-bottom:2px solid #ccc">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+      <span style="font-size:13px;font-weight:bold;color:#1a1a3e">Activity &amp; Data 현황 (FEED + Execution)</span>
+      <span style="font-size:11px;color:#666;font-weight:bold">04.07 기준</span>
+    </div>
+    <div>
+      <table id="dashTable" style="border-collapse:collapse;font-size:10px;table-layout:fixed;width:600px">
+        <colgroup>
+          <col style="width:24px"><col style="width:50px"><col style="width:130px"><col style="width:172px">
+          <col style="width:32px"><col style="width:70px"><col style="width:52px"><col style="width:70px">
+        </colgroup>
+        <thead>
+          <tr style="background:#333;color:#fff">
+            <th style="padding:3px 2px;border:1px solid #555;font-size:7px;writing-mode:vertical-rl"></th>
+            <th style="padding:3px 3px;text-align:left;border:1px solid #555;font-size:8px">Stage</th>
+            <th style="padding:3px 3px;text-align:left;border:1px solid #555;font-size:8px">Team</th>
+            <th style="padding:3px 3px;text-align:left;border:1px solid #555;font-size:8px">Part</th>
+            <th style="padding:3px 3px;text-align:center;border:1px solid #555;font-size:8px" colspan="2">Activity</th>
+            <th style="padding:3px 3px;text-align:center;border:1px solid #555;font-size:8px" colspan="2">Data</th>
+          </tr>
+        </thead>
+        <tbody id="dashBody"></tbody>
+        <tfoot id="dashFoot"></tfoot>
+      </table>
+      <div style="display:flex;justify-content:center;margin-top:10px;width:600px">
+        <div style="text-align:center">
+          <canvas id="donutChart" style="width:440px;height:360px"></canvas>
+          <div id="chartLegend" style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;font-size:9px;max-width:440px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM: Dashboard 2 - Progress -->
+  <div id="dashboard2" style="padding:10px 14px;background:#f5f5f5">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+      <span style="font-size:13px;font-weight:bold;color:#1a1a3e">Execution Progress (FEED 제외)</span>
+      <span style="font-size:11px;color:#666;font-weight:bold">04.07 기준</span>
+    </div>
+    <div>
+      <table id="progTable" style="border-collapse:collapse;font-size:10px;table-layout:fixed;width:600px">
+        <colgroup>
+          <col style="width:74px"><col style="width:130px"><col style="width:172px">
+          <col style="width:32px"><col style="width:32px"><col style="width:38px"><col style="width:52px"><col style="width:70px">
+        </colgroup>
+        <thead>
+          <tr style="background:#1a1a3e;color:#fff">
+            <th style="padding:3px 3px;text-align:left;border:1px solid #444;font-size:8px">Stage</th>
+            <th style="padding:3px 3px;text-align:left;border:1px solid #444;font-size:8px">Team</th>
+            <th style="padding:3px 3px;text-align:left;border:1px solid #444;font-size:8px">Part</th>
+            <th style="padding:3px 3px;text-align:center;border:1px solid #444;font-size:8px">목표</th>
+            <th style="padding:3px 3px;text-align:center;border:1px solid #444;font-size:8px" colspan="2">실적</th>
+            <th style="padding:3px 3px;text-align:center;border:1px solid #444;font-size:8px">%</th>
+            <th style="padding:3px 3px;text-align:center;border:1px solid #444;font-size:8px">비율</th>
+          </tr>
+        </thead>
+        <tbody id="progBody"></tbody>
+        <tfoot id="progFoot"></tfoot>
+      </table>
+      <div style="display:flex;justify-content:center;margin-top:10px;width:600px">
+        <div style="text-align:center">
+          <canvas id="progChart" style="width:440px;height:360px"></canvas>
+          <div id="progLegend" style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;font-size:9px;max-width:440px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Selected discipline info bar -->
+<div id="selBar" style="display:none;background:#1a1a3e;color:#fff;padding:6px 16px;font-size:11px;text-align:center;cursor:pointer" onclick="goToWorkflow()">
+  <span id="selBarText"></span> &nbsp;▶&nbsp; Work Flow 에서 보기 (클릭)
+</div>
+
+</div><!-- /page-dashboard -->
+
+<!-- PAGE 2: WORKFLOW -->
+<div id="page-workflow" class="page-section">
+
+<div style="background:#1a1a3e;padding:6px 20px;"><a href="index.html" style="color:#ffd700;font-size:12px;font-weight:700;text-decoration:none;">🏠 Portal로 돌아가기</a></div>
+<div class="title-bar">
+  <h1>Module Project Workflow</h1>
+  <div class="sub">MFC PAR Module - Ontology & Document Management | Module Part</div>
+</div>
+<div class="ctrl">
+  <div>
+    <span class="cr">&#9632; &#10003;&#10003;&#10003; Core</span>&nbsp;
+    <span class="cm">&#9632; &#10003;&#10003; Important</span>&nbsp;
+    <span class="cb">&#9632; Has Files</span>&nbsp;
+    <span class="cg">&#9632; Empty</span>&nbsp;
+    <span class="fc fc-g">N</span>=Files&nbsp;
+    <span class="fc fc-x">0</span>=Empty&nbsp;
+    <span id="status2"></span>
+  </div>
+  <div>
+    <button onclick="document.querySelectorAll('.fl').forEach(e=>e.classList.add('show'))">Show Files</button>
+    <button onclick="document.querySelectorAll('.fl').forEach(e=>e.classList.remove('show'))">Hide Files</button>
+    <button onclick="window.print()">Print</button>
+  </div>
+</div>
+
+<div id="app"></div>
+
+</div><!-- /page-workflow -->
+
+<div style="background:#2c2c54;color:#aaa;padding:6px 16px;font-size:9px;display:flex;justify-content:space-between">
+  <span>Module Project Workflow Ontology | MFC PAR Module | Module Part</span>
+  <span>Base: E:\RayHan_Backup\Project\[Constructability Team]\07. Module\백서\MFC Module\MFC PAR Module 백서\</span>
+  <span>2026-04-06</span>
+</div>
+</div><!-- /page -->
+</div><!-- /main-content -->
+
+<script src="folder_data.js"></script>
+<script>
+// ========== WORKFLOW STRUCTURE DEFINITION ==========
+// This defines the PDF structure: Phase > Stage > SubStage > Discipline > Activities
+// Priority: 3=Core(red), 2=Important(magenta), 1=Normal(blue check), 0=none
+// "path" matches the folder name relative to base
+
+const WORKFLOW = {
+  phases: [
+    {
+      id: "1. FEED", label: "1. FEED", cssPhase: "bg-feed",
+      stages: [{
+        id: "", label: "", cssStage: "",
+        substages: [{
+          id: "", label: "",
+          disciplines: {
+            ct: [
+              {p:3, id:"1.1.1.", name:"Maximize Modularization", path:"1. FEED/1.1. Constructability Team/1.1.1. Maximize Modularization"},
+              {p:2, id:"1.1.2.", name:"Conceptual Feasibility Study of Modularization", path:"1. FEED/1.1. Constructability Team/1.1.2. Conceptual Feasibility Study of Modularization"},
+              {p:0, id:"1.1.2.1.", name:"Single Weld Hook Up Constructability Study", path:"1. FEED/1.1. Constructability Team/1.1.2. Conceptual Feasibility Study of Modularization/1.1.2.1. Single Weld Hook Up 을 위한 Constructability Study", sub:true},
+              {p:0, id:"1.1.3.", name:"Review Schedule of Modularization", path:"1. FEED/1.1. Constructability Team/1.1.3. Review Schedule of Modularization"},
+              {p:1, id:"1.1.4.", name:"Adjust-Confirm Enveloping and List of Modules", path:"1. FEED/1.1. Constructability Team/1.1.4. Adjust-Confirm Enveloping and List of Modules"},
+              {p:2, id:"1.1.5.", name:"Liaison between Heavy Hauling and Lifting(For Module T&I)", path:"1. FEED/1.1. Constructability Team/1.1.5. Liaison between Heavy Hauling and Lifting(For Module T&I)"},
+            ],
+            pm_cost: [
+              {p:0, id:"1.2.1.1.", name:"수주 전략 및 Reliable 검토-반영", path:"1. FEED/1.2. Project Management/1.2.1. Cost & Contracting/1.2.1.1. 수주 전략 및 Reliable 검토-반영"},
+              {p:0, id:"1.2.1.1.a.", name:"Safed Cost effective modularization approach", sub:true},
+              {p:3, id:"1.2.1.1.b.", name:"Strategical Modularization Requirement", sub:true},
+              {p:0, id:"1.2.1.1.c.", name:"모듈 조직도", path:"1. FEED/1.2. Project Management/1.2.1. Cost & Contracting/1.2.1.1. 수주 전략 및 Reliable 검토-반영/1.2.1.1. c.모듈 조직도", sub:true},
+            ],
+            pm_sched: [
+              {p:0, id:"1.2.2.1.", name:"Strategical Partner 발굴 필요성 검토", path:"1. FEED/1.2. Project Management/1.2.2. Schedule/1.2.2.1. Strategical Partner 발굴 필요성 검토"},
+              {p:3, id:"1.2.2.2.", name:"Module 적용 시 Schedule 검토", path:"1. FEED/1.2. Project Management/1.2.2. Schedule/1.2.2.2. Module 적용 시 Schedule 검토"},
+              {p:0, id:"1.2.2.2.a.", name:"Increase schedule certainty", path:"1. FEED/1.2. Project Management/1.2.2. Schedule/1.2.2.2. Module 적용 시 Schedule 검토/1.2.2.2. a.Increase schedule certainty", sub:true},
+              {p:0, id:"1.2.2.2.b.", name:"Module BM-BQ 를 고려", path:"1. FEED/1.2. Project Management/1.2.2. Schedule/1.2.2.2. Module 적용 시 Schedule 검토/1.2.2.2. b.Module BM-BQ 를 고려", sub:true},
+              {p:1, id:"1.2.2.2.c.", name:"Traditional Construction Method 와 비교", path:"1. FEED/1.2. Project Management/1.2.2. Schedule/1.2.2.2. Module 적용 시 Schedule 검토/1.2.2.2. c.Traditional Construction Method 와 비교", sub:true},
+              {p:2, id:"1.2.2.2.d.", name:"Module 적용으로 인한 현장 인력 투입 최소화 고려", path:"1. FEED/1.2. Project Management/1.2.2. Schedule/1.2.2.2. Module 적용 시 Schedule 검토/1.2.2.2. d.Module 적용으로 인한 현장 인력 투입 최소화 고려", sub:true},
+              {p:0, id:"1.2.2.2.e.", name:"Module 적용으로 인한 타 공종 시공성 향상 고려", path:"1. FEED/1.2. Project Management/1.2.2. Schedule/1.2.2.2. Module 적용 시 Schedule 검토/1.2.2.2. e.Module 적용으로 인한 타 공종 현장 시공성 향상 고려", sub:true},
+            ],
+            pm_coord: [
+              {p:3, id:"1.2.3.1.", name:"Modularization 검토", path:"1. FEED/1.2. Project Management/1.2.3. Coordination/1.2.3.1. Modularization 검토"},
+              {p:2, id:"1.2.3.1.a.", name:"Module vs Stick built vs Precast 비교 후 Module 범위 확정", path:"1. FEED/1.2. Project Management/1.2.3. Coordination/1.2.3.1. Modularization 검토/1.2.3.1. a.Module vs Stick built  vs Precast 비교 후 Module 범위 확정", sub:true},
+              {p:0, id:"1.2.3.1.b.", name:"대관-인허가 사항 검토", sub:true},
+              {p:0, id:"1.2.3.1.c.", name:"최종 Module 적용 사업성 검토-결정", sub:true},
+              {p:3, id:"1.2.3.2.", name:"Metocean Data", path:"1. FEED/1.2. Project Management/1.2.3. Coordination/1.2.3.2. Metocean Data"},
+            ],
+            eng: [
+              {p:3, id:"1.3.1.", name:"Modularization 검토", path:"1. FEED/1.3. Engineering/1.3.1. Modularization 검토"},
+              {p:0, id:"1.3.1.a.", name:"Module vs Stick built vs Precast", path:"1. FEED/1.3. Engineering/1.3.1. Modularization 검토/1.3.1. a.Module vs Stick built vs Precast", sub:true},
+              {p:0, id:"1.3.1.b.", name:"Module 적용 범위", path:"1. FEED/1.3. Engineering/1.3.1. Modularization 검토/1.3.1. b.Module 적용 범위", sub:true},
+              {p:0, id:"1.3.1.c.", name:"Module 분할 및 Numbering", path:"1. FEED/1.3. Engineering/1.3.1. Modularization 검토/1.3.1. c.Module 분할 및 Numbering", sub:true},
+              {p:3, id:"1.3.1.d.", name:"Module 을 반영한 Plot Plan", path:"1. FEED/1.3. Engineering/1.3.1. Modularization 검토/1.3.1. d.Module 을 반영한 Plot Plan", sub:true},
+              {p:0, id:"1.3.1.e.", name:"Module 구조 connection 검토", path:"1. FEED/1.3. Engineering/1.3.1. Modularization 검토/1.3.1. e.Module 구조 connection 검토", sub:true},
+              {p:0, id:"1.3.2.", name:"Module BM-BQ 산정", path:"1. FEED/1.3. Engineering/1.3.2. Module BM-BQ 산정"},
+              {p:0, id:"1.3.3.", name:"물양장 위치, Capacity 조건 검토", path:"1. FEED/1.3. Engineering/1.3.3. 물양장 위치, Capacity 조건 검토"},
+            ],
+            proc: [
+              {p:3, id:"1.4.1.", name:"Module Transportation Possibility", path:"1. FEED/1.4. Procurement/1.4.1. Module Transportation Possibility"},
+              {p:0, id:"1.4.1.a.", name:"운송 Route 검토 및 물양장 Capacity 확인", path:"1. FEED/1.4. Procurement/1.4.1. Module Transportation Possibility/1.4.1. a.운송 Route 검토 및 물양장 Capacity  확인", sub:true},
+              {p:0, id:"1.4.1.b.", name:"Risk Analysis", path:"1. FEED/1.4. Procurement/1.4.1. Module Transportation Possibility/1.4.1. b.Risk Analysis", sub:true},
+              {p:0, id:"1.4.1.c.", name:"지역-권역별 모듈 제작사 List 작성 및 고려", path:"1. FEED/1.4. Procurement/1.4.1. Module Transportation Possibility/1.4.1. c.지역-권역별 모듈 제작사 List 작성 및 고려", sub:true},
+              {p:0, id:"1.4.1.d.", name:"물류 Route 최적화 검토", path:"1. FEED/1.4. Procurement/1.4.1. Module Transportation Possibility/1.4.1. d.물류 Route 최적화 검토", sub:true},
+            ],
+            const: [
+              {p:0, id:"1.5.1.", name:"전략적 모듈 제작사 발굴 및 PVL, PSL Suggestion", path:"1. FEED/1.5. Construction/1.5.1. 전략적 모듈 제작사 발굴 및 PVL, PSL Suggestion"},
+              {p:0, id:"1.5.2.", name:"현지 업체 M-P Allocation 확인", path:"1. FEED/1.5. Construction/1.5.2. 현지 업체 M-P Allocation 확인"},
+              {p:0, id:"1.5.2.1.", name:"Module Shop Survey Report", path:"1. FEED/1.5. Construction/1.5.2. 현지 업체 M-P Allocation 확인/1.5.2.1 Module Shop Survey Report", sub:true},
+              {p:3, id:"1.5.3.", name:"Modularization 시공 간섭, Crane Constructability 검토", path:"1. FEED/1.5. Construction/1.5.3. Modularization 에 따른 공종별 시공 간섭, Crane 운용 등을 고려한 Constructability 검토"},
+              {p:0, id:"1.5.3.1.", name:"Module Special Study", path:"1. FEED/1.5. Construction/1.5.3. Modularization 에 따른 공종별 시공 간섭, Crane 운용 등을 고려한 Constructability 검토/1.5.3.1. Module Special Study", sub:true},
+              {p:0, id:"1.5.4.", name:"PAU(Pre-Assembled Unit) Scope 검토", path:"1. FEED/1.5. Construction/1.5.4. PAU(Pre-Assembled Unit) Scope 검토"},
+              {p:0, id:"1.5.5.", name:"Module 육상,해상 운송 검토", path:"1. FEED/1.5. Construction/1.5.5. Module 육상,해상 운송 검토"},
+              {p:0, id:"1.5.6.", name:"Module 공사 fee 집행 당위성", path:"1. FEED/1.5. Construction/1.5.6. Module 공사 fee 집행 당위성"},
+            ],
+            qhse: [
+              {p:0, id:"1.6.1.", name:"PIM 관련자료", path:"1. FEED/1.6. Q-HSE/1.6.1. PIM 관련자료"},
+            ]
+          }
+        }]
+      }]
+    },
+    {
+      id: "3. Execution", label: "3. Execution", cssPhase: "bg-exec",
+      stages: [
+        {
+          id: "3.1", label: "3.1. Planning & Scheduling", cssStage: "bg-ps",
+          substages: [{
+            id: "", label: "",
+            disciplines: {
+              ct: [
+                {p:0, id:"3.1.1.1.", name:"Project 모듈 설계 지원", path:"3. Execution/3.1. Planning & Scheduling/3.1.1. Constructability Team/3.1.1.1. Project 모듈 설계 지원"},
+                {p:0, id:"3.1.1.1.a.", name:"운송 설계 스케쥴 최적화 협의", sub:true},
+                {p:0, id:"3.1.1.1.b.", name:"물량 보강 최적화", sub:true},
+                {p:0, id:"3.1.1.1.c.", name:"Stick Built→Module Engineering Coordination", path:"3. Execution/3.1. Planning & Scheduling/3.1.1. Constructability Team/3.1.1.1. Project 모듈 설계 지원/3.1.1.1. c.Stick Built 설계를 Module 설계로 전환하기 위한 Engineering Coordination", sub:true},
+                {p:2, id:"3.1.1.2.", name:"Module Design Philosophy for ITB (For PO-공사계약)", path:"3. Execution/3.1. Planning & Scheduling/3.1.1. Constructability Team/3.1.1.2. Module Design Philosophy for ITB (For PO-공사계약 )"},
+                {p:0, id:"3.1.1.2.a.", name:"Typical Loading Beam Design", path:"3. Execution/3.1. Planning & Scheduling/3.1.1. Constructability Team/3.1.1.2. Module Design Philosophy for ITB (For PO-공사계약 )/3.1.1.2. a.Typical Loading Beam Design", sub:true},
+                {p:0, id:"3.1.1.2.b.", name:"Typical Sea Fastening & Grillage", path:"3. Execution/3.1. Planning & Scheduling/3.1.1. Constructability Team/3.1.1.2. Module Design Philosophy for ITB (For PO-공사계약 )/3.1.1.2. b.Typical Sea Fastening & Grillage", sub:true},
+                {p:0, id:"3.1.1.2.c.", name:"Barge Batch plan(Preliminary)", path:"3. Execution/3.1. Planning & Scheduling/3.1.1. Constructability Team/3.1.1.2. Module Design Philosophy for ITB (For PO-공사계약 )/3.1.1.2. c.Barge Batch plan(Preliminary)", sub:true},
+                {p:0, id:"3.1.1.2.d.", name:"SPMT General arrangement", path:"3. Execution/3.1. Planning & Scheduling/3.1.1. Constructability Team/3.1.1.2. Module Design Philosophy for ITB (For PO-공사계약 )/3.1.1.2. d.SPMT General arrangement", sub:true},
+                {p:0, id:"3.1.1.2.e.", name:"Module weight control and CoG monitoring procedures", sub:true},
+                {p:0, id:"3.1.1.2.f.", name:"Marine Transport Structural Characteristics", sub:true},
+                {p:0, id:"3.1.1.2.g.", name:"Land Transport Structural Characteristics", sub:true},
+                {p:0, id:"3.1.1.2.h.", name:"Crane Lifting Structural Characteristics", sub:true},
+                {p:0, id:"3.1.1.3.", name:"Risk hedging", path:"3. Execution/3.1. Planning & Scheduling/3.1.1. Constructability Team/3.1.1.3. Risk hedging"},
+                {p:0, id:"3.1.1.3.a.", name:"MWS 선 협의(By 운송업체 with 보험사)", path:"3. Execution/3.1. Planning & Scheduling/3.1.1. Constructability Team/3.1.1.3. Risk hedging/3.1.1.3. a.MWS 선 협의(By 운송업체 with 보험사)", sub:true},
+                {p:3, id:"3.1.1.3.b.", name:"Weather Restricted Operation", path:"3. Execution/3.1. Planning & Scheduling/3.1.1. Constructability Team/3.1.1.3. Risk hedging/3.1.1.3. b.Weather Restricted Operation", sub:true},
+                {p:0, id:"3.1.1.3.c.", name:"Sea Fastening, Loading beam re-use", path:"3. Execution/3.1. Planning & Scheduling/3.1.1. Constructability Team/3.1.1.3. Risk hedging/3.1.1.3. c.Sea Fastening, Loading beam re-use", sub:true},
+                {p:0, id:"3.1.1.3.d.", name:"Barge Selection", path:"3. Execution/3.1. Planning & Scheduling/3.1.1. Constructability Team/3.1.1.3. Risk hedging/3.1.1.3. d.Barge Selection", sub:true},
+                {p:0, id:"3.1.1.3.e.", name:"Tow 해석-DNV Consult", path:"3. Execution/3.1. Planning & Scheduling/3.1.1. Constructability Team/3.1.1.3. Risk hedging/3.1.1.3. e.Tow 해석-DNV Consult", sub:true},
+                {p:2, id:"3.1.1.4.", name:"제작 Yard TBE", path:"3. Execution/3.1. Planning & Scheduling/3.1.1. Constructability Team/3.1.1.4. 제작 Yard TBE"},
+                {p:0, id:"3.1.1.5.", name:"Module 운송 항차수 결정", path:"3. Execution/3.1. Planning & Scheduling/3.1.1. Constructability Team/3.1.1.5. Module 운송 항차수 결정"},
+              ],
+              pm_cost: [
+                {p:0, id:"3.1.2.1.1.", name:"Prime Contracting", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.1. Cost & Contracting/3.1.2.1.1. Prime Contracting"},
+                {p:0, id:"3.1.2.1.1.a.", name:"Progressive Lump-sum", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.1. Cost & Contracting/3.1.2.1.1. Prime Contracting/3.1.2.1.1. a.Progressive Lump-sum", sub:true},
+                {p:0, id:"3.1.2.1.1.b.", name:"Lump-sum", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.1. Cost & Contracting/3.1.2.1.1. Prime Contracting/3.1.2.1.1. b.Lump-sum", sub:true},
+                {p:0, id:"3.1.2.1.1.c.", name:"Cost plus Fee", sub:true},
+                {p:0, id:"3.1.2.1.2.", name:"Management of Fabrication Contract", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.1. Cost & Contracting/3.1.2.1.2. Management of Fabrication Contract"},
+                {p:0, id:"3.1.2.1.2.a.", name:"Module Shop 파견 인원 상주 선집행 품의", sub:true},
+                {p:0, id:"3.1.2.1.2.b.", name:"삼강엠엔티", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.1. Cost & Contracting/3.1.2.1.2. Management of Fabrication Contract/3.1.2.1.2. b. 삼강엠엔티", sub:true},
+                {p:0, id:"3.1.2.1.2.c.", name:"세진중공업", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.1. Cost & Contracting/3.1.2.1.2. Management of Fabrication Contract/3.1.2.1.2. c. 세진중공업", sub:true},
+                {p:3, id:"3.1.2.1.3.", name:"ITB 작성(PO or SubContracting Base)", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.1. Cost & Contracting/3.1.2.1.3. ITB 작성(PO or Subcontracting Base)"},
+                {p:0, id:"3.1.2.1.3.a.", name:"Plot Plan-Module Key Plan", sub:true},
+                {p:0, id:"3.1.2.1.3.b.", name:"Module List", sub:true},
+                {p:0, id:"3.1.2.1.3.c.", name:"SOC-SOS", sub:true},
+                {p:0, id:"3.1.2.1.3.d.", name:"Module Philosophy", sub:true},
+                {p:0, id:"3.1.2.1.3.e.", name:"Transportation Route", sub:true},
+                {p:0, id:"3.1.2.1.3.f.", name:"Specification", sub:true},
+                {p:0, id:"3.1.2.1.4.", name:"Contract Scope of Work", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.1. Cost & Contracting/3.1.2.1.4. Contract Scope of Work"},
+                {p:3, id:"3.1.2.1.5.", name:"MFC Module 발주 방법 및 계약방법", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.1. Cost & Contracting/3.1.2.1.5. MFC Module 발주 방법 및 계약방법"},
+                {p:0, id:"3.1.2.1.5.a.", name:"Contingency", sub:true},
+                {p:0, id:"3.1.2.1.5.b.", name:"Revision & Rework 정산", sub:true},
+                {p:0, id:"3.1.2.1.5.c.", name:"Progress Payment 기준", sub:true},
+                {p:0, id:"3.1.2.1.5.d.", name:"계약 단가", sub:true},
+              ],
+              pm_sched: [
+                {p:0, id:"3.1.2.2.1.", name:"Strategical Partnership", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.2. Schedule/3.1.2.2.1. Strategical Partnership"},
+                {p:0, id:"3.1.2.2.1.a.", name:"Engineering Partner", sub:true},
+                {p:0, id:"3.1.2.2.1.b.", name:"Construction Partner", sub:true},
+                {p:0, id:"3.1.2.2.1.c.", name:"Material Supplier", sub:true},
+                {p:0, id:"3.1.2.2.1.d.", name:"Equipment Vendor", sub:true},
+                {p:0, id:"3.1.2.2.1.e.", name:"Elec & Inst. Vendor", sub:true},
+                {p:0, id:"3.1.2.2.2.", name:"Module 제작 및 운송 과정의 문제 검토", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.2. Schedule/3.1.2.2.2. Module 제작 및 운송 과정의 문제 검토"},
+                {p:0, id:"3.1.2.2.2.a.", name:"제작사 노사 문제", sub:true},
+                {p:0, id:"3.1.2.2.2.b.", name:"제작사 경영 환경", sub:true},
+                {p:0, id:"3.1.2.2.3.", name:"Progress Reporting", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.2. Schedule/3.1.2.2.3. Management of Progress Reporting systems with emphasis on schedule compliance"},
+                {p:0, id:"3.1.2.2.4.", name:"Setting of Measurable elements", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.2. Schedule/3.1.2.2.4. Setting of Measureable elements"},
+                {p:0, id:"3.1.2.2.4.a.", name:"WBS - EWP - CWP(CWA)", sub:true},
+                {p:0, id:"3.1.2.2.4.b.", name:"Schedule Control", sub:true},
+                {p:2, id:"3.1.2.2.4.c.", name:"Module 운송 일정 및 항차 일정 반영", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.2. Schedule/3.1.2.2.4. Setting of Measureable elements/3.1.2.2.4. c.Module 운송 일정 및 항차 일정 반영", sub:true},
+              ],
+              pm_coord: [
+                {p:0, id:"3.1.2.3.1.", name:"MP Mobilization Plan", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.3. Coordination/3.1.2.3.1. MP Mobilization Plan"},
+                {p:0, id:"3.1.2.3.2.", name:"Project Management Overall", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.3. Coordination/3.1.2.3.2. Project Management Overall"},
+                {p:0, id:"3.1.2.3.3.", name:"Owner Coordination", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.3. Coordination/3.1.2.3.3. Owner Coordination"},
+                {p:3, id:"3.1.2.3.3.a.", name:"Modularization 적용 여부 및 범위 확정", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.3. Coordination/3.1.2.3.3. Owner Coordination/3.1.2.3.3. a.Modularization 적용 여부 및 범위 확정", sub:true},
+                {p:0, id:"3.1.2.3.4.", name:"Sub-con Coordination", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.3. Coordination/3.1.2.3.4. Sub-con Coordination"},
+                {p:1, id:"3.1.2.3.4.a.", name:"Module 제작업체 수 결정", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.3. Coordination/3.1.2.3.4. Sub-con Coordination/3.1.2.3.4. a.Module 제작업체 수 결정", sub:true},
+                {p:0, id:"3.1.2.3.4.b.", name:"Module 종류(PAR-PAS-PAU) 및 개수에 따른 업체 분배 확정", sub:true},
+                {p:0, id:"3.1.2.3.5.", name:"인허가-대관 업무-Permit", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.3. Coordination/3.1.2.3.5. 인허가-대관 업무-Permit"},
+                {p:0, id:"3.1.2.3.6.", name:"Document Control", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.3. Coordination/3.1.2.3.6. Document Control"},
+                {p:0, id:"3.1.2.3.7.", name:"UNICCS연계방안 검토", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.3. Coordination/3.1.2.3.7. UNICCS연계방안 검토"},
+                {p:0, id:"3.1.2.3.8.", name:"Cost Control", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.3. Coordination/3.1.2.3.8. Cost Control"},
+                {p:0, id:"3.1.2.3.9.", name:"Progress vs Invoicing확인", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.3. Coordination/3.1.2.3.9. Progress vs Invoicing확인"},
+                {p:0, id:"3.1.2.3.10.", name:"Interface Manage", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.3. Coordination/3.1.2.3.10. Interface Manage"},
+                {p:0, id:"3.1.2.3.11.", name:"Budget Control", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.3. Coordination/3.1.2.3.11. Budget Control"},
+                {p:0, id:"3.1.2.3.12.", name:"Module Towing Route Metocean Study", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.3. Coordination/3.1.2.3.12. Module Towing Route Metocean Study"},
+                {p:0, id:"3.1.2.3.13.", name:"Towing Tug Selection Methodology", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.3. Coordination/3.1.2.3.13. Towing Tug Selection Methodology"},
+                {p:0, id:"3.1.2.3.14.", name:"Available Tidal variation for Loadout and Load-in", path:"3. Execution/3.1. Planning & Scheduling/3.1.2. Project Management/3.1.2.3. Coordination/3.1.2.3.14. Available Tidal variation for Loadout and Load-in"},
+              ],
+              eng: [
+                {p:0, id:"3.1.3.1.", name:"Engineering Deliverable Control", path:"3. Execution/3.1. Planning & Scheduling/3.1.3. Engineering/3.1.3.1. Engineering Deliverable Control"},
+                {p:3, id:"3.1.3.2.", name:"3D Model Control", path:"3. Execution/3.1. Planning & Scheduling/3.1.3. Engineering/3.1.3.2. 3D Model Control"},
+                {p:3, id:"3.1.3.3.", name:"Discipline 별 Key Issue, 특이사항", path:"3. Execution/3.1. Planning & Scheduling/3.1.3. Engineering/3.1.3.3. Discipline 별 Key Issue, 특이사항"},
+                {p:0, id:"3.1.3.4.", name:"Plot Plan for Modularization", path:"3. Execution/3.1. Planning & Scheduling/3.1.3. Engineering/3.1.3.4. Plot Plan for Modularization"},
+                {p:0, id:"3.1.3.5.", name:"Piping Paint Execution Procedure", path:"3. Execution/3.1. Planning & Scheduling/3.1.3. Engineering/3.1.3.5. Piping Paint Execution Procedure"},
+                {p:1, id:"3.1.3.6.", name:"Module List 작성", path:"3. Execution/3.1. Planning & Scheduling/3.1.3. Engineering/3.1.3.6. Module List 작성"},
+                {p:0, id:"3.1.3.7.", name:"Envelopes for Modularization", path:"3. Execution/3.1. Planning & Scheduling/3.1.3. Engineering/3.1.3.7. Envelopes for Modularization"},
+                {p:0, id:"3.1.3.8.", name:"BM Review", path:"3. Execution/3.1. Planning & Scheduling/3.1.3. Engineering/3.1.3.8. BM Review"},
+                {p:0, id:"3.1.3.9.", name:"Scope of modules for E&I", path:"3. Execution/3.1. Planning & Scheduling/3.1.3. Engineering/3.1.3.9. Scope of modules for E&I"},
+                {p:1, id:"3.1.3.9.c.", name:"Electric heat tracing", path:"3. Execution/3.1. Planning & Scheduling/3.1.3. Engineering/3.1.3.9. Scope of modules for E&I/3.1.3.9. c.Electric heat tracing", sub:true},
+              ],
+              proc: [
+                {p:0, id:"3.1.4.1.", name:"Purchasing & Material Supply(PO Material Only)", path:"3. Execution/3.1. Planning & Scheduling/3.1.4. Procurement/3.1.4.1. Purchasing & Material Supply(PO Material Only)"},
+                {p:0, id:"3.1.4.2.", name:"Expediting(PO Material Only)", path:"3. Execution/3.1. Planning & Scheduling/3.1.4. Procurement/3.1.4.2. Expediting(PO Material Only)"},
+                {p:0, id:"3.1.4.3.", name:"Inspection(PO Material Only)", path:"3. Execution/3.1. Planning & Scheduling/3.1.4. Procurement/3.1.4.3. Inspection(PO Material Only)"},
+                {p:0, id:"3.1.4.4.", name:"Logistics", path:"3. Execution/3.1. Planning & Scheduling/3.1.4. Procurement/3.1.4.4. Logistics"},
+                {p:3, id:"3.1.4.5.", name:"Material Control Plan", path:"3. Execution/3.1. Planning & Scheduling/3.1.4. Procurement/3.1.4.5. Material Control Plan"},
+                {p:0, id:"3.1.4.5.a.", name:"Material Balance control (Shortage & Surplus)", sub:true},
+                {p:0, id:"3.1.4.5.b.", name:"Packing List-Notice Delivery Point", sub:true},
+                {p:0, id:"3.1.4.5.c.", name:"Material Receiving Inspection", path:"3. Execution/3.1. Planning & Scheduling/3.1.4. Procurement/3.1.4.5. Material Control Plan/3.1.4.5. c.Material Receiving Inspection", sub:true},
+                {p:0, id:"3.1.4.6.", name:"Payment-CO-Claim Control", path:"3. Execution/3.1. Planning & Scheduling/3.1.4. Procurement/3.1.4.6. Payment-CO-Claim Control"},
+                {p:0, id:"3.1.4.7.", name:"Module 운송 일정 및 항차 검토", path:"3. Execution/3.1. Planning & Scheduling/3.1.4. Procurement/3.1.4.7. Module 운송 일정 및 항차 검토"},
+              ],
+              const: [
+                {p:3, id:"3.1.5.1.", name:"제작 Yard Survey", path:"3. Execution/3.1. Planning & Scheduling/3.1.5. Construction/3.1.5.1. 제작 Yard Survey"},
+                {p:0, id:"3.1.5.2.", name:"Module 고려한 공사수행계획서", path:"3. Execution/3.1. Planning & Scheduling/3.1.5. Construction/3.1.5.2. Module 고려한 공사수행계획서"},
+                {p:0, id:"3.1.5.3.", name:"ITB 작성(공사 계약인 경우)", path:"3. Execution/3.1. Planning & Scheduling/3.1.5. Construction/3.1.5.3. ITB 작성(공사 계약인 경우)"},
+                {p:0, id:"3.1.5.4.", name:"제작 Yard TBE-CBE", path:"3. Execution/3.1. Planning & Scheduling/3.1.5. Construction/3.1.5.4. 제작 Yard TBE-CBE"},
+                {p:0, id:"3.1.5.5.", name:"Transportation Study", path:"3. Execution/3.1. Planning & Scheduling/3.1.5. Construction/3.1.5.5. Transportation Study (with Constructability Team)"},
+                {p:0, id:"3.1.5.6.", name:"Operation-Material Control-Trouble Shooting", path:"3. Execution/3.1. Planning & Scheduling/3.1.5. Construction/3.1.5.6. Operation-Material Control-Trouble Shooting-Others"},
+                {p:0, id:"3.1.5.7.", name:"Safety & Quality Management in Field", path:"3. Execution/3.1. Planning & Scheduling/3.1.5. Construction/3.1.5.7. Safety & Quality Management in Field"},
+              ],
+              qhse: [
+                {p:0, id:"3.1.6.1.", name:"Field Quality Control MP Allocation", path:"3. Execution/3.1. Planning & Scheduling/3.1.6. Q-HSE/3.1.6.1. Field Quality Control MP Allocation"},
+                {p:0, id:"3.1.6.2.", name:"Quality Control Plan(Subcontracting or PO)", path:"3. Execution/3.1. Planning & Scheduling/3.1.6. Q-HSE/3.1.6.2. Quality Control Plan(Subcontracting or PO)"},
+                {p:3, id:"3.1.6.3.", name:"Module dimensional control procedures", path:"3. Execution/3.1. Planning & Scheduling/3.1.6. Q-HSE/3.1.6.3. Module dimensional control procedures"},
+                {p:3, id:"3.1.6.4.", name:"Inspection(PIM, ITP)", path:"3. Execution/3.1. Planning & Scheduling/3.1.6. Q-HSE/3.1.6.4. Inspection(PIM, ITP)"},
+                {p:0, id:"3.1.6.5.", name:"Hand Over document 구성", path:"3. Execution/3.1. Planning & Scheduling/3.1.6. Q-HSE/3.1.6.5. Hand Over document 구성 (Vendor data, MDB 등과 연계, UNICCS적용 등)"},
+                {p:0, id:"3.1.6.6.", name:"안전팀 MP Allocation", path:"3. Execution/3.1. Planning & Scheduling/3.1.6. Q-HSE/3.1.6.6. 안전팀 MP Allocation"},
+                {p:0, id:"3.1.6.7.", name:"HSE Plan", path:"3. Execution/3.1. Planning & Scheduling/3.1.6. Q-HSE/3.1.6.7. HSE Plan(국내 Project 일 경우 안전팀에서)"},
+                {p:0, id:"3.1.6.8.", name:"Module Shop HSE Control", path:"3. Execution/3.1. Planning & Scheduling/3.1.6. Q-HSE/3.1.6.8. Module Shop HSE Control"},
+                {p:0, id:"3.1.6.9.", name:"Management of HSE program", path:"3. Execution/3.1. Planning & Scheduling/3.1.6. Q-HSE/3.1.6.9. Management of performance of HSE program"},
+              ]
+            }
+          }]
+        },
+        {
+          id: "3.2", label: "3.2. Engineering", cssStage: "bg-eng",
+          substages: [
+            { id: "3.2.1", label: "3.2.1. Before 30% MR", cssSub: "bg-sub2",
+              disciplines: {
+                ct: [
+                  {p:0, id:"3.2.1.1.1.", name:"Review Module Design Outputs", path:"3. Execution/3.2. Engineering/3.2.1. Before 30% MR/3.2.1.1. Constructability Team/3.2.1.1.1. Review Module Design Outputs"},
+                  {p:3, id:"3.2.1.1.1.a.", name:"Module Design Criteria", path:"3. Execution/3.2. Engineering/3.2.1. Before 30% MR/3.2.1.1. Constructability Team/3.2.1.1.1. Review Module Design Outputs/3.2.1.1.1. a.Module Design Criteria", sub:true},
+                  {p:0, id:"3.2.1.1.1.b.", name:"Module Type(SPMT-Lifting)", path:"3. Execution/3.2. Engineering/3.2.1. Before 30% MR/3.2.1.1. Constructability Team/3.2.1.1.1. Review Module Design Outputs/3.2.1.1.1. b.Module Type(SPMT-Lifting)", sub:true},
+                  {p:0, id:"3.2.1.1.1.c.", name:"Sea-fastening & Grillage by Transportation Subcontractor", sub:true},
+                  {p:0, id:"3.2.1.1.1.d.", name:"Naval Architect", sub:true},
+                  {p:2, id:"3.2.1.1.1.e.", name:"Module T&I Calculation & Analysis", path:"3. Execution/3.2. Engineering/3.2.1. Before 30% MR/3.2.1.1. Constructability Team/3.2.1.1.1. Review Module Design Outputs/3.2.1.1.1. e.Module T&I Calculation & Analysis", sub:true},
+                  {p:0, id:"3.2.1.1.1.f.", name:"Special note for Shipping Design (Weather Restricted Operation)", sub:true},
+                  {p:0, id:"3.2.1.1.2.", name:"Module Data Sheets and Document Control", path:"3. Execution/3.2. Engineering/3.2.1. Before 30% MR/3.2.1.1. Constructability Team/3.2.1.1.2. Module Data Sheets and Document Control"},
+                  {p:2, id:"3.2.1.1.3.", name:"Motion Analysis", path:"3. Execution/3.2. Engineering/3.2.1. Before 30% MR/3.2.1.1. Constructability Team/3.2.1.1.3. Motion Analysis"},
+                  {p:0, id:"3.2.1.1.4.", name:"Clarification with Stick-built Design", path:"3. Execution/3.2. Engineering/3.2.1. Before 30% MR/3.2.1.1. Constructability Team/3.2.1.1.4. Clarification with Stick-built Design"},
+                  {p:0, id:"3.2.1.1.4.a.", name:"Loading Beam 간섭조정", path:"3. Execution/3.2. Engineering/3.2.1. Before 30% MR/3.2.1.1. Constructability Team/3.2.1.1.4. Clarification with Stick-built Design/3.2.1.1.4. a. Loading Beam 간섭조정", sub:true},
+                  {p:0, id:"3.2.1.1.4.b.", name:"Platform 위치 변경", path:"3. Execution/3.2. Engineering/3.2.1. Before 30% MR/3.2.1.1. Constructability Team/3.2.1.1.4. Clarification with Stick-built Design/3.2.1.1.4. b. Platform 위치 변경", sub:true},
+                  {p:0, id:"3.2.1.1.4.c.", name:"SF Lug 간섭 조정방안", path:"3. Execution/3.2. Engineering/3.2.1. Before 30% MR/3.2.1.1. Constructability Team/3.2.1.1.4. Clarification with Stick-built Design/3.2.1.1.4. c. SF Lug 간섭 조정방안", sub:true},
+                ],
+                pm_cost:[], pm_sched:[], pm_coord:[],
+                eng: [
+                  {p:3, id:"3.2.1.3.1.", name:"Early Design Freezing", path:"3. Execution/3.2. Engineering/3.2.1. Before 30% MR/3.2.1.3. Engineering/3.2.1.3.1. Early Design Freezing"},
+                  {p:3, id:"3.2.1.3.2.", name:"3D Modeling Setting for Modularization", path:"3. Execution/3.2. Engineering/3.2.1. Before 30% MR/3.2.1.3. Engineering/3.2.1.3.2. 3D Modeling Setting for Modularization"},
+                  {p:0, id:"3.2.1.3.3.", name:"Stick Built Analysis considering Transportation Loading", path:"3. Execution/3.2. Engineering/3.2.1. Before 30% MR/3.2.1.3. Engineering/3.2.1.3.3. Stick Built Analysis considering Transportation Loading"},
+                  {p:0, id:"3.2.1.3.4.", name:"Piping Connections", path:"3. Execution/3.2. Engineering/3.2.1. Before 30% MR/3.2.1.3. Engineering/3.2.1.3.4. Piping Connections"},
+                  {p:0, id:"3.2.1.3.5.", name:"Painting Spec. 작성", path:"3. Execution/3.2. Engineering/3.2.1. Before 30% MR/3.2.1.3. Engineering/3.2.1.3.5. Painting Spec. 작성"},
+                  {p:0, id:"3.2.1.3.6.", name:"배관 자재 MTO", path:"3. Execution/3.2. Engineering/3.2.1. Before 30% MR/3.2.1.3. Engineering/3.2.1.3.6. 배관 자재 MTO"},
+                  {p:0, id:"3.2.1.3.6.a.", name:"Support 물량 포함", sub:true},
+                  {p:0, id:"3.2.1.3.6.b.", name:"Contingency Pipe 고려", sub:true},
+                  {p:2, id:"3.2.1.3.7.", name:"Minimum Pipe Spacing", path:"3. Execution/3.2. Engineering/3.2.1. Before 30% MR/3.2.1.3. Engineering/3.2.1.3.7. Minimum Pipe Spacing"},
+                  {p:0, id:"3.2.1.3.7.a.", name:"Cutting & Welding Machine 사용 고려", path:"3. Execution/3.2. Engineering/3.2.1. Before 30% MR/3.2.1.3. Engineering/3.2.1.3.7. Minimum Pipe Spacing/3.2.1.3.7. a.Cutting & Welding Machine 사용 고려", sub:true},
+                  {p:2, id:"3.2.1.3.8.", name:"Module 철골 Connection Detail", path:"3. Execution/3.2. Engineering/3.2.1. Before 30% MR/3.2.1.3. Engineering/3.2.1.3.8. Module 철골 Connection Detail"},
+                  {p:2, id:"3.2.1.3.9.", name:"Module 철골 Base Plate Detail", path:"3. Execution/3.2. Engineering/3.2.1. Before 30% MR/3.2.1.3. Engineering/3.2.1.3.9. Module 철골 Base Plate Detail"},
+                ],
+                proc: [],
+                const: [
+                  {p:0, id:"3.2.1.5.1.", name:"Heavy Hauling & Lifting 반영", path:"3. Execution/3.2. Engineering/3.2.1. Before 30% MR/3.2.1.5. Construction/3.2.1.5.1. Heavy Hauling & Lifting 반영"},
+                  {p:0, id:"3.2.1.5.1.a.", name:"Module 운송 및 공사 Activity 간섭 검토", sub:true},
+                  {p:0, id:"3.2.1.5.1.b.", name:"UG work early completion", sub:true},
+                  {p:3, id:"3.2.1.5.1.c.", name:"Module 운송로 점검 및 보강", path:"3. Execution/3.2. Engineering/3.2.1. Before 30% MR/3.2.1.5. Construction/3.2.1.5.1. Heavy Hauling & Lifting 반영/3.2.1.5.1. c.Module 운송로 점검 및 보강", sub:true},
+                  {p:0, id:"3.2.1.5.1.d.", name:"물양장 및 운송로 사용 일정 조정", sub:true},
+                ],
+                qhse: []
+              }
+            },
+            { id: "3.2.2", label: "3.2.2. Before 60% MR", cssSub: "bg-sub2",
+              disciplines: {
+                ct: [
+                  {p:3, id:"3.2.2.1.1.", name:"CoG Control", path:"3. Execution/3.2. Engineering/3.2.2. Before 60% MR/3.2.2.1. Constructability Team/3.2.2.1.1. CoG Control"},
+                  {p:0, id:"3.2.2.1.1.a.", name:"3D Model 및 Excel COG Control With IT Team", sub:true},
+                  {p:0, id:"3.2.2.1.1.b.", name:"Loading inform", sub:true},
+                  {p:0, id:"3.2.2.1.1.c.", name:"하중 변경 Inform 관리", sub:true},
+                  {p:0, id:"3.2.2.1.1.d.", name:"Module weight check list", sub:true},
+                  {p:0, id:"3.2.2.1.1.e.", name:"CoG Compare as per Milestone", sub:true},
+                  {p:3, id:"3.2.2.1.2.", name:"Detail T&I Analysis", path:"3. Execution/3.2. Engineering/3.2.2. Before 60% MR/3.2.2.1. Constructability Team/3.2.2.1.2. Detail T&I Analysis"},
+                  {p:0, id:"3.2.2.1.2.a.", name:"Module 별 Stick Built Analysis 확인", sub:true},
+                  {p:0, id:"3.2.2.1.2.b.", name:"철골 설계 변경에 따른 Risk 검토", path:"3. Execution/3.2. Engineering/3.2.2. Before 60% MR/3.2.2.1. Constructability Team/3.2.2.1.2. Detail T&I Analysis/3.2.2.1.2. b.철골 설계 변경에 따른 Risk 검토", sub:true},
+                  {p:0, id:"3.2.2.1.2.c.", name:"운송사 검토 Transportation 방안검토", path:"3. Execution/3.2. Engineering/3.2.2. Before 60% MR/3.2.2.1. Constructability Team/3.2.2.1.2. Detail T&I Analysis/3.2.2.1.2. c.운송사 검토 Transportation 방안검토", sub:true},
+                ],
+                pm_cost:[
+                  {p:0, id:"3.2.2.3.7.", name:"Equipment TBE, 발주", path:"3. Execution/3.2. Engineering/3.2.2. Before 60% MR/3.2.2.3. Engineering/3.2.2.3.7. Equipment TBE, 발주"},
+                ], pm_sched:[
+                  {p:0, id:"3.2.2.2.2.1.", name:"Detail(LV4-5-6) Module Schedule", path:"3. Execution/3.2. Engineering/3.2.2. Before 60% MR/3.2.2.2. Project Management/3.2.2.2.2. Schedule/3.2.2.2.2.1. Detail(LV4-5-6) Module Schedule"},
+                  {p:0, id:"3.2.2.2.2.2.", name:"IT System (MMS) Setting-Up", path:"3. Execution/3.2. Engineering/3.2.2. Before 60% MR/3.2.2.2. Project Management/3.2.2.2.2. Schedule/3.2.2.2.2.2. IT System (MMS) Setting-Up and Operation"},
+                ],
+                pm_coord:[
+                  {p:1, id:"3.2.2.2.3.1.", name:"Module 제작장 관리를 위한 조직 구성", path:"3. Execution/3.2. Engineering/3.2.2. Before 60% MR/3.2.2.2. Project Management/3.2.2.2.3. Coordination/3.2.2.2.3.1. Module 제작장 관리를 위한 조직 구성"},
+                ],
+                eng: [
+                  {p:2, id:"3.2.2.3.1.", name:"Module Envelop 확정", path:"3. Execution/3.2. Engineering/3.2.2. Before 60% MR/3.2.2.3. Engineering/3.2.2.3.1. Module Envelop 확정"},
+                  {p:0, id:"3.2.2.3.1.a.", name:"Steel Stair Ship Loose 여부", sub:true},
+                  {p:0, id:"3.2.2.3.1.b.", name:"Pipe envelop limitation", path:"3. Execution/3.2. Engineering/3.2.2. Before 60% MR/3.2.2.3. Engineering/3.2.2.3.1. Module Envelop 확정/3.2.2.3.1. b.Pipe envelop limitation", sub:true},
+                  {p:1, id:"3.2.2.3.2.", name:"Pipe Support Design and Installation", path:"3. Execution/3.2. Engineering/3.2.2. Before 60% MR/3.2.2.3. Engineering/3.2.2.3.2. Pipe Support Design and Installation"},
+                  {p:0, id:"3.2.2.3.2.a.", name:"운송용 Temporary support 고려", sub:true},
+                  {p:0, id:"3.2.2.3.3.", name:"Module 용 Equipment V-P Finalize", path:"3. Execution/3.2. Engineering/3.2.2. Before 60% MR/3.2.2.3. Engineering/3.2.2.3.3. Module 용 Equipment V-P Finalize"},
+                  {p:0, id:"3.2.2.3.4.", name:"배관 ISO IFC Issue", path:"3. Execution/3.2. Engineering/3.2.2. Before 60% MR/3.2.2.3. Engineering/3.2.2.3.4. 배관 ISO IFC Issue"},
+                  {p:0, id:"3.2.2.3.5.", name:"철골 Basic 도면 Issue", path:"3. Execution/3.2. Engineering/3.2.2. Before 60% MR/3.2.2.3. Engineering/3.2.2.3.5. 철골 Basic 도면  Issue"},
+                  {p:2, id:"3.2.2.3.6.", name:"Piping Pressure test", path:"3. Execution/3.2. Engineering/3.2.2. Before 60% MR/3.2.2.3. Engineering/3.2.2.3.6. Piping Pressure test"},
+                  {p:0, id:"3.2.2.3.6.a.", name:"Test method 결정(Plug 사용 등)", path:"3. Execution/3.2. Engineering/3.2.2. Before 60% MR/3.2.2.3. Engineering/3.2.2.3.6. Piping Pressure test/3.2.2.3.6. a.Test method 결정(Plug 사용 등)", sub:true},
+                  {p:0, id:"3.2.2.3.6.b.", name:"Golden Joint 적용 협의", path:"3. Execution/3.2. Engineering/3.2.2. Before 60% MR/3.2.2.3. Engineering/3.2.2.3.6. Piping Pressure test/3.2.2.3.6. b.Golden Joint 적용 협의", sub:true},
+                ],
+                proc: [
+                  {p:3, id:"3.2.2.4.1.", name:"Module Shop 별 구매 자재 Delivery Plan", path:"3. Execution/3.2. Engineering/3.2.2. Before 60% MR/3.2.2.4. Procurement/3.2.2.4.1. Module Shop 별 구매 자재 Delivery Plan"},
+                ],
+                const: [
+                  {p:3, id:"3.2.2.5.1.", name:"Sub-Contracting(제작사 선정)", path:"3. Execution/3.2. Engineering/3.2.2. Before 60% MR/3.2.2.5. Construction/3.2.2.5.1. Sub-Contracting(제작사 선정)"},
+                  {p:0, id:"3.2.2.5.1.a.", name:"모듈 제작사 기성 지급 및 정산방법", path:"3. Execution/3.2. Engineering/3.2.2. Before 60% MR/3.2.2.5. Construction/3.2.2.5.1. Sub-Contracting(제작사 선정)/3.2.2.5.1. a.모듈 제작사 기성 지급 및 정산방법", sub:true},
+                  {p:0, id:"3.2.2.5.1.b.", name:"Payment Condition with Progress Measurement", sub:true},
+                  {p:0, id:"3.2.2.5.1.c.", name:"Cash-flow 반영", sub:true},
+                ],
+                qhse: [
+                  {p:3, id:"3.2.2.6.1.", name:"Dimension Control", path:"3. Execution/3.2. Engineering/3.2.2. Before 60% MR/3.2.2.6. Q-HSE/3.2.2.6.1. Dimension Control"},
+                  {p:0, id:"3.2.2.6.1.a.", name:"Allowable Tolerance Table (AISC 303)", sub:true},
+                  {p:0, id:"3.2.2.6.1.b.", name:"철골 제작 기준 및 Site work 기준 협의", sub:true},
+                  {p:1, id:"3.2.2.6.1.c.", name:"정반 검사", path:"3. Execution/3.2. Engineering/3.2.2. Before 60% MR/3.2.2.6. Q-HSE/3.2.2.6.1. Dimension Control/3.2.2.6.1. c.정반 검사", sub:true},
+                  {p:0, id:"3.2.2.6.1.d.", name:"변형 방지 검사", sub:true},
+                  {p:0, id:"3.2.2.6.1.e.", name:"Module Tie In Point 좌표 관리", sub:true},
+                  {p:0, id:"3.2.2.6.1.f.", name:"Monitor dimensional control activities", path:"3. Execution/3.2. Engineering/3.2.2. Before 60% MR/3.2.2.6. Q-HSE/3.2.2.6.1. Dimension Control/3.2.2.6.1. f.Monitor dimensional control activities", sub:true},
+                  {p:0, id:"3.2.2.6.2.", name:"Piping Connections", path:"3. Execution/3.2. Engineering/3.2.2. Before 60% MR/3.2.2.6. Q-HSE/3.2.2.6.2. Piping Connections"},
+                  {p:0, id:"3.2.2.6.2.a.", name:"허용 배관 공차(1-16\", 2mm) or Length tolerance ±3.2mm", sub:true},
+                  {p:0, id:"3.2.2.6.2.b.", name:"Aligning Flanges (ASME PCC-1, APPENDIX E)", sub:true},
+                ]
+              }
+            },
+            { id: "3.2.3", label: "3.2.3. Material Handling", cssSub: "bg-sub2",
+              disciplines: {
+                ct: [
+                  {p:3, id:"3.2.3.1.1.", name:"Weight Control Report 관리", path:"3. Execution/3.2. Engineering/3.2.3. Material Handling/3.2.3.1. Constructability Team/3.2.3.1.1. Weight Control Report 관리"},
+                  {p:0, id:"3.2.3.1.1.a.", name:"3D Model vs Structural Analysis vs Shop(Weighing)", sub:true},
+                  {p:0, id:"3.2.3.1.2.", name:"Final Loading Beam Detail 확정", path:"3. Execution/3.2. Engineering/3.2.3. Material Handling/3.2.3.1. Constructability Team/3.2.3.1.2. Final Loading Beam Detail 확정"},
+                  {p:0, id:"3.2.3.1.3.", name:"Final Sea Fastening Detail 확정", path:"3. Execution/3.2. Engineering/3.2.3. Material Handling/3.2.3.1. Constructability Team/3.2.3.1.3. Final Sea Featening Detail 확정"},
+                  {p:2, id:"3.2.3.1.4.", name:"Module Shop 별 SWHU(3mm single joint) 방안 검토", path:"3. Execution/3.2. Engineering/3.2.3. Material Handling/3.2.3.1. Constructability Team/3.2.3.1.4. Module Shop 별 SWHU(3mm single joint 확보) 방안 검토"},
+                ],
+                pm_cost:[], pm_sched:[],
+                pm_coord:[
+                  {p:0, id:"3.2.3.2.3.1.", name:"Eng'g & 제작, 설계 간 Interface 관리", path:"3. Execution/3.2. Engineering/3.2.3. Material Handling/3.2.3.2. Project Management/3.2.3.2.3. Coordination/3.2.3.2.3.1. Eng'g & 제작, 설계 간 Interface 관리"},
+                  {p:1, id:"3.2.3.2.3.2.", name:"대 발주처 Coordination (Reporting-Meeting)"},
+                  {p:0, id:"3.2.3.2.3.3.", name:"Module Management Plan", path:"3. Execution/3.2. Engineering/3.2.3. Material Handling/3.2.3.2. Project Management/3.2.3.2.3. Coordination/3.2.3.2.3.3. Module Management Plan"},
+                ],
+                eng: [
+                  {p:0, id:"3.2.3.3.1.", name:"Shop Drawing Control", path:"3. Execution/3.2. Engineering/3.2.3. Material Handling/3.2.3.3. Engineering/3.2.3.3.1. Shop Drawing Control"},
+                  {p:0, id:"3.2.3.3.2.", name:"GTP MADENG to 구매 System"},
+                  {p:0, id:"3.2.3.3.3.", name:"Cable Route Plan", path:"3. Execution/3.2. Engineering/3.2.3. Material Handling/3.2.3.3. Engineering/3.2.3.3.3. Cable Route Plan"},
+                  {p:0, id:"3.2.3.3.4.", name:"Main Cable Routing", path:"3. Execution/3.2. Engineering/3.2.3. Material Handling/3.2.3.3. Engineering/3.2.3.3.4. Main Cable Routing"},
+                  {p:0, id:"3.2.3.3.5.", name:"Cable Tray PO", path:"3. Execution/3.2. Engineering/3.2.3. Material Handling/3.2.3.3. Engineering/3.2.3.3.5. Cable Tray PO"},
+                  {p:0, id:"3.2.3.3.6.", name:"Conduit, JB 등 모듈 적용 확정 검토", path:"3. Execution/3.2. Engineering/3.2.3. Material Handling/3.2.3.3. Engineering/3.2.3.3.6. Conduit, JB 등 모듈 적용 확정 검토"},
+                ],
+                proc: [],
+                const: [
+                  {p:3, id:"3.2.3.5.1.", name:"Module Yard Management (삼강-세진)", path:"3. Execution/3.2. Engineering/3.2.3. Material Handling/3.2.3.5. Construction/3.2.3.5.1. Module Yard Management (삼강-세진)"},
+                  {p:1, id:"3.2.3.5.2.", name:"Preservation 방안", path:"3. Execution/3.2. Engineering/3.2.3. Material Handling/3.2.3.5. Construction/3.2.3.5.2. Preservation 방안"},
+                  {p:1, id:"3.2.3.5.3.", name:"Piping 고정 방안", path:"3. Execution/3.2. Engineering/3.2.3. Material Handling/3.2.3.5. Construction/3.2.3.5.3. Piping 고정 방안"},
+                ],
+                qhse: [
+                  {p:0, id:"3.2.3.6.1.", name:"배관 Inspection and Test Plan", path:"3. Execution/3.2. Engineering/3.2.3. Material Handling/3.2.3.6. Q-HSE/3.2.3.6.1. 배관 Inspection and Test Plan"},
+                  {p:0, id:"3.2.3.6.1.a.", name:"Spool 관리 방안", sub:true},
+                  {p:0, id:"3.2.3.6.2.", name:"Claim Control", path:"3. Execution/3.2. Engineering/3.2.3. Material Handling/3.2.3.6. Q-HSE/3.2.3.6.2. Claim Control"},
+                  {p:0, id:"3.2.3.6.3.", name:"Change Order Control", path:"3. Execution/3.2. Engineering/3.2.3. Material Handling/3.2.3.6. Q-HSE/3.2.3.6.3. Change Order Control"},
+                  {p:0, id:"3.2.3.6.4.", name:"Module Yard safety supervision plan", path:"3. Execution/3.2. Engineering/3.2.3. Material Handling/3.2.3.6. Q-HSE/3.2.3.6.4. Module Yard safety supervision plan"},
+                ]
+              }
+            }
+          ]
+        },
+        {
+          id: "3.3", label: "3.3. Fabrication & Assembly", cssStage: "bg-fab",
+          substages: [
+            { id: "3.3.1", label: "3.3.1. Steel Cut", cssSub: "bg-sub3",
+              disciplines: {
+                ct: [
+                  {p:2, id:"3.3.1.1.1.", name:"Module T&I Detail Engineering 협의", path:"3. Execution/3.3. Fabrication & Assembly/3.3.1. Steel Cut/3.3.1.1. Constructability Team/3.3.1.1.1. Module T&I Detail Engineering 협의"},
+                  {p:1, id:"3.3.1.1.1a.", name:"현장 3mm gap 확보방안", path:"3. Execution/3.3. Fabrication & Assembly/3.3.1. Steel Cut/3.3.1.1. Constructability Team/3.3.1.1.1. Module T&I Detail Engineering 협의/3.3.1.1.1 a. 현장 3mm gap 확보방안", sub:true},
+                  {p:0, id:"3.3.1.1.1b.", name:"SPMT Load Out 방안", sub:true},
+                  {p:3, id:"3.3.1.1.2.", name:"SWHU 관리방안", path:"3. Execution/3.3. Fabrication & Assembly/3.3.1. Steel Cut/3.3.1.1. Constructability Team/3.3.1.1.2. SWHU 관리방안"},
+                  {p:0, id:"3.3.1.1.2.c.", name:"Module 운송로 간섭 사전 검토", sub:true},
+                ],
+                pm_cost:[], pm_sched:[],
+                pm_coord:[
+                  {p:1, id:"3.3.1.2.3.1.", name:"Shop Module Work Progress Report", path:"3. Execution/3.3. Fabrication & Assembly/3.3.1. Steel Cut/3.3.1.2. Project Management/3.3.1.2.2. Schedule/3.3.1.2.2.1. Shop Module Work Progress Report"},
+                ],
+                eng: [], proc: [],
+                const: [
+                  {p:3, id:"3.3.1.5.1.", name:"Field Material Control", path:"3. Execution/3.3. Fabrication & Assembly/3.3.1. Steel Cut/3.3.1.5. Construction/3.3.1.5.1. Field Material Control"},
+                  {p:0, id:"3.3.1.5.1.a.", name:"사급자재 Control Work Flow(MTO-PO-납기-Piping-Stationary-Elec-Inst)", sub:true},
+                  {p:0, id:"3.3.1.5.2.", name:"재하도 업체 Qualification 기준", path:"3. Execution/3.3. Fabrication & Assembly/3.3.1. Steel Cut/3.3.1.5. Construction/3.3.1.5.2. 재하도 업체에 대한 Qualification 기준"},
+                  {p:0, id:"3.3.1.5.3.", name:"Module Layout considering single weld", path:"3. Execution/3.3. Fabrication & Assembly/3.3.1. Steel Cut/3.3.1.5. Construction/3.3.1.5.3. Module Layout considering single weld"},
+                  {p:0, id:"3.3.1.5.4.", name:"Ship Loose Item Handover 관리"},
+                  {p:2, id:"3.3.1.5.5.", name:"Claim Control", path:"3. Execution/3.3. Fabrication & Assembly/3.3.1. Steel Cut/3.3.1.5. Construction/3.3.1.5.5. Claim Control"},
+                  {p:2, id:"3.3.1.5.6.", name:"Change Order Control", path:"3. Execution/3.3. Fabrication & Assembly/3.3.1. Steel Cut/3.3.1.5. Construction/3.3.1.5.6. Change Order Control"},
+                  {p:0, id:"3.3.1.5.7.", name:"Module Yard Staffing and Labor"},
+                  {p:0, id:"3.3.1.5.8.", name:"T&I Control (Subcontracting Case)"},
+                  {p:0, id:"3.3.1.5.9.", name:"Construction Execution Plan", path:"3. Execution/3.3. Fabrication & Assembly/3.3.1. Steel Cut/3.3.1.5. Construction/3.3.1.5.9. Construction Execution Plan(CEP)"},
+                  {p:0, id:"3.3.1.5.10.", name:"Subcontractor Control"},
+                  {p:0, id:"3.3.1.5.11.", name:"Punch Clear (Subcontracting Case)"},
+                  {p:0, id:"3.3.1.5.12.", name:"Commissioning"},
+                  {p:0, id:"3.3.1.5.13.", name:"Shop BM Control"},
+                  {p:0, id:"3.3.1.5.14.", name:"Shop Material Control"},
+                  {p:0, id:"3.3.1.5.15.", name:"MRI Control (Subcontracting Case)"},
+                  {p:0, id:"3.3.1.5.16.", name:"Welding Control in Shop", path:"3. Execution/3.3. Fabrication & Assembly/3.3.1. Steel Cut/3.3.1.5. Construction/3.3.1.5.16. Welding Control in Shop"},
+                  {p:0, id:"3.3.1.5.17.", name:"Painting Control in Shop"},
+                ],
+                qhse: []
+              }
+            },
+            { id: "3.3.2", label: "3.3.2. Shop Activity", cssSub: "bg-sub3",
+              disciplines: {
+                ct: [
+                  {p:3, id:"3.3.2.1.1.", name:"운송로 간섭 검토", path:"3. Execution/3.3. Fabrication & Assembly/3.3.2. Shop Activity/3.3.2.1. Constructability Team/3.3.2.1.1. 운송로 간섭 검토"},
+                  {p:0, id:"3.3.2.1.2.", name:"Stowage Plan 검토", path:"3. Execution/3.3. Fabrication & Assembly/3.3.2. Shop Activity/3.3.2.1. Constructability Team/3.3.2.1.2. Stowage Plan 검토"},
+                  {p:0, id:"3.3.2.1.3.", name:"Shop coordination for additional scope", path:"3. Execution/3.3. Fabrication & Assembly/3.3.2. Shop Activity/3.3.2.1. Constructability Team/3.3.2.1.3. Shop coordination for additional scope of work"},
+                ],
+                pm_cost:[], pm_sched:[],
+                pm_coord:[
+                  {p:0, id:"3.3.2.2.3.5.", name:"Shop Schedule 관리", path:"3. Execution/3.3. Fabrication & Assembly/3.3.2. Shop Activity/3.3.2.2. Project Management/3.3.2.2.3 Coordination/3.3.2.2.3.5 Shop Schedule 관리"},
+                {p:0, id:"3.3.2.2.3.6.", name:"Shop Progress Reporting", path:"3. Execution/3.3. Fabrication & Assembly/3.3.2. Shop Activity/3.3.2.2. Project Management/3.3.2.2.3 Coordination/3.3.2.2.3.6 Shop Progress Reporting"},
+                {p:3, id:"3.3.2.2.3.7.", name:"Module설치 현장과의 Coordination procedure확인", path:"3. Execution/3.3. Fabrication & Assembly/3.3.2. Shop Activity/3.3.2.2. Project Management/3.3.2.2.3 Coordination/3.3.2.2.3.7 Module설치 현장과의 Coordination procedure확인"},
+                ],
+                eng: [
+                  {p:0, id:"3.3.2.3.1.", name:"PAR Module Engineering Schedule for Shop", path:"3. Execution/3.3. Fabrication & Assembly/3.3.2. Shop Activity/3.3.2.3. Engineering/3.3.2.3.1. Engineering Schedule"},
+                ],
+                proc: [],
+                const: [
+                  {p:0, id:"3.3.2.5.1.", name:"Module 운송로 지반 보강 작업", path:"3. Execution/3.3. Fabrication & Assembly/3.3.2. Shop Activity/3.3.2.5. Construction/3.3.2.5.1. Module 운송로 지반 보강 작업"},
+                  {p:1, id:"3.3.2.5.2.", name:"Trouble Shooting in shop", path:"3. Execution/3.3. Fabrication & Assembly/3.3.2. Shop Activity/3.3.2.5. Construction/3.3.2.5.2. Trouble Shooting in shop"},
+                  {p:0, id:"3.3.2.5.3.", name:"Prefabrication of piping and pipe supports", path:"3. Execution/3.3. Fabrication & Assembly/3.3.2. Shop Activity/3.3.2.5. Construction/3.3.2.5.3. Prefabrication of piping and pipe supports"},
+                  {p:0, id:"3.3.2.5.5.", name:"Blasting & Painting", path:"3. Execution/3.3. Fabrication & Assembly/3.3.2. Shop Activity/3.3.2.5. Construction/3.3.2.5.5. Blasting & Painting"},
+                  {p:0, id:"3.3.2.5.8.", name:"Equipment Install", path:"3. Execution/3.3. Fabrication & Assembly/3.3.2. Shop Activity/3.3.2.5. Construction/3.3.2.5.8. Equipment Install"},
+                  {p:2, id:"3.3.2.5.9.e.", name:"Weighing", path:"3. Execution/3.3. Fabrication & Assembly/3.3.2. Shop Activity/3.3.2.5. Construction/3.3.2.5.9. e. Weighing"},
+                  {p:3, id:"3.3.2.5.9.", name:"Pre-commission", path:"3. Execution/3.3. Fabrication & Assembly/3.3.2. Shop Activity/3.3.2.5. Construction/3.3.2.5.9. Pre-commission"},
+                ],
+                qhse: [
+                  {p:2, id:"3.3.2.6.1.", name:"Welder Test in Shop", path:"3. Execution/3.3. Fabrication & Assembly/3.3.2. Shop Activity/3.3.2.6.2. Q-HSE (삼강 모듈)/3.3.2.6.1. Welder Test in Shop"},
+                  {p:2, id:"3.3.2.6.2.", name:"사급 배관자재 QC Work Flow", path:"3. Execution/3.3. Fabrication & Assembly/3.3.2. Shop Activity/3.3.2.6.2. Q-HSE (삼강 모듈)/3.3.2.6.2. 사급 배관자재 QC Work Flow"},
+                  {p:3, id:"3.3.2.6.6.", name:"FFR-NCR", path:"3. Execution/3.3. Fabrication & Assembly/3.3.2. Shop Activity/3.3.2.6.2. Q-HSE (삼강 모듈)/3.3.2.6.6. FFR NCR"},
+                  {p:0, id:"3.3.2.6.4.", name:"Paint Adhesion Test(ASTM D4541)", path:"3. Execution/3.3. Fabrication & Assembly/3.3.2. Shop Activity/3.3.2.6.2. Q-HSE (삼강 모듈)/3.3.2.6.4. Paint Adhesion Test(ASTM D4541)"},
+                  {p:0, id:"3.3.2.6.9.", name:"Hydro Test", path:"3. Execution/3.3. Fabrication & Assembly/3.3.2. Shop Activity/3.3.2.6.2. Q-HSE (삼강 모듈)/3.3.2.6.9 Hydro 관련 참고자료"},
+                  {p:0, id:"3.3.2.6.10.", name:"NDE 진행 관련", path:"3. Execution/3.3. Fabrication & Assembly/3.3.2. Shop Activity/3.3.2.6.2. Q-HSE (삼강 모듈)/3.3.2.6.10 NDE 진행 관련"},
+                  {p:0, id:"3.3.2.6.11.", name:"철골", path:"3. Execution/3.3. Fabrication & Assembly/3.3.2. Shop Activity/3.3.2.6.2. Q-HSE (삼강 모듈)/3.3.2.6.11 철골"},
+                ]
+              }
+            },
+            { id: "3.3.3", label: "3.3.3. Load Out", cssSub: "bg-sub3",
+              disciplines: {
+                ct: [
+                  {p:0, id:"3.3.3.1.1.", name:"Site Visit for Module Control", path:"3. Execution/3.3. Fabrication & Assembly/3.3.3. Load Out/3.3.3.1. Constructability Team/3.3.3.1.1. Site Visit for Module Control"},
+                  {p:0, id:"3.3.3.1.1.a.", name:"Design change 및 현장 FDN과의 Consistency 최종 점검 참여", sub:true},
+                  {p:1, id:"3.3.3.1.1.b.", name:"운송 준비 및 현장설치 준비 상태 확인", sub:true},
+                  {p:0, id:"3.3.3.1.1.c.", name:"Module ending stopper부착 및 Inspection markers확인", sub:true},
+                  {p:0, id:"3.3.3.1.1.d.", name:"MDR 작성 상태 확인", sub:true},
+                  {p:0, id:"3.3.3.1.2.", name:"Pipe Connection Target Map 작성", path:"3. Execution/3.3. Fabrication & Assembly/3.3.3. Load Out/3.3.3.1. Constructability Team/3.3.3.1.2. Pipe Connection Target Map 작성"},
+                  {p:0, id:"3.3.3.1.2.a.", name:"3D Scan & Measurement Data", path:"3. Execution/3.3. Fabrication & Assembly/3.3.3. Load Out/3.3.3.1. Constructability Team/3.3.3.1.2. Pipe Connection Target Map 작성/3.3.3.1.2. a.3D Scan & Measurement Data", sub:true},
+                  {p:0, id:"3.3.3.1.2.b.", name:"Alignment simulating with 3D Scanning", sub:true},
+                  {p:0, id:"3.3.3.1.3.", name:"Load-Out Procedure", path:"3. Execution/3.3. Fabrication & Assembly/3.3.3. Load Out/3.3.3.1. Constructability Team/3.3.3.1.3. Load-Out Procedure"},
+                  {p:0, id:"3.3.3.1.4.", name:"Barge Water Ballasting Calculation", path:"3. Execution/3.3. Fabrication & Assembly/3.3.3. Load Out/3.3.3.1. Constructability Team/3.3.3.1.4. Barge Water Ballasting Calculation"},
+                  {p:0, id:"3.3.3.1.5.", name:"Towing Manual", path:"3. Execution/3.3. Fabrication & Assembly/3.3.3. Load Out/3.3.3.1. Constructability Team/3.3.3.1.5. Towing Manual"},
+                  {p:0, id:"3.3.3.1.6.", name:"Stability and Metocean Data", path:"3. Execution/3.3. Fabrication & Assembly/3.3.3. Load Out/3.3.3.1. Constructability Team/3.3.3.1.6. Stability and Metocean Data"},
+                  {p:0, id:"3.3.3.1.7.", name:"Compare design COG with Weighing of Modules", path:"3. Execution/3.3. Fabrication & Assembly/3.3.3. Load Out/3.3.3.1. Constructability Team/3.3.3.1.7. Compare design COG with Weighing of Modules"},
+                  {p:0, id:"3.3.3.1.8.", name:"Loadout 시 Ballasting Sequence 확인"},
+                  {p:0, id:"3.3.3.1.9.", name:"Towing Route Weather Window 확인"},
+                ],
+                pm_cost:[], pm_sched:[],
+                pm_coord:[
+                  {p:0, id:"3.3.3.2.3.1.", name:"Shop Handover Documentation", path:"3. Execution/3.3. Fabrication & Assembly/3.3.3. Load Out/3.3.3.2. Project Management/3.3.3.2.3. Coordination/3.3.3.2.3.1. Shop Handover Documentation"},
+                ],
+                eng: [
+                  {p:1, id:"3.3.3.3.1.", name:"Module Yard 와의 설계변경 사항 반영", path:"3. Execution/3.3. Fabrication & Assembly/3.3.3. Load Out/3.3.3.3. Engineering/3.3.3.3.1. Module Yard 와의 설계변경 사항 반영"},
+                ],
+                proc: [],
+                const: [
+                  {p:0, id:"3.3.3.5.1.", name:"Early Completion of Paving work", path:"3. Execution/3.3. Fabrication & Assembly/3.3.3. Load Out/3.3.3.5. Construction/3.3.3.5.1. Early Completion of Paving work"},
+                  {p:1, id:"3.3.3.5.2.", name:"Foundation Inspection", path:"3. Execution/3.3. Fabrication & Assembly/3.3.3. Load Out/3.3.3.5. Construction/3.3.3.5.2. Foundation Inspection"},
+                  {p:0, id:"3.3.3.5.3.", name:"Hydro Test & Installation of temporary support", path:"3. Execution/3.3. Fabrication & Assembly/3.3.3. Load Out/3.3.3.5. Construction/3.3.3.5.3. Hydro Test & Installtion of temporary support"},
+                  {p:0, id:"3.3.3.5.3.a.", name:"Lachet Belt", sub:true},
+                  {p:0, id:"3.3.3.5.3.b.", name:"Metal support with Temporary welding", sub:true},
+                  {p:0, id:"3.3.3.5.4.", name:"Load Out By SPMT or Crane", path:"3. Execution/3.3. Fabrication & Assembly/3.3.3. Load Out/3.3.3.5. Construction/3.3.3.5.4. Load Out By SPMT or Crane"},
+                  {p:0, id:"3.3.3.5.5.", name:"Pipe Cutting", path:"3. Execution/3.3. Fabrication & Assembly/3.3.3. Load Out/3.3.3.5. Construction/3.3.3.5.5. Pipe Cutting"},
+                  {p:0, id:"3.3.3.5.6.", name:"Pipe Bevelling", path:"3. Execution/3.3. Fabrication & Assembly/3.3.3. Load Out/3.3.3.5. Construction/3.3.3.5.6. Pipe Bevelling"},
+                  {p:0, id:"3.3.3.5.7.", name:"Final Shop Modification"},
+                  {p:0, id:"3.3.3.5.8.", name:"Finalize Preservations"},
+                  {p:0, id:"3.3.3.5.9.", name:"Weighing of Modules", path:"3. Execution/3.3. Fabrication & Assembly/3.3.3. Load Out/3.3.3.5. Construction/3.3.3.5.9. Weighing of Modules"},
+                  {p:0, id:"3.3.3.5.10.", name:"Sea Fastening Installation"},
+                  {p:0, id:"3.3.3.5.11.", name:"Loading Beam Installation"},
+                ],
+                qhse: [
+                  {p:0, id:"3.3.3.6.1.", name:"Visual Inspection before Load Out", path:"3. Execution/3.3. Fabrication & Assembly/3.3.3. Load Out/3.3.3.6. Q-HSE/3.3.3.6.1. Visual Inspection before Load Out"},
+                  {p:0, id:"3.3.3.6.2.", name:"Turnover Inspection Sheets", path:"3. Execution/3.3. Fabrication & Assembly/3.3.3. Load Out/3.3.3.6. Q-HSE/3.3.3.6.2. Turnover Inspection Sheets"},
+                  {p:0, id:"3.3.3.6.3.", name:"Final Measurement", path:"3. Execution/3.3. Fabrication & Assembly/3.3.3. Load Out/3.3.3.6. Q-HSE/3.3.3.6.3. Final Measurement"},
+                ]
+              }
+            }
+          ]
+        },
+        {
+          id: "3.4", label: "3.4. Transportation & Installation", cssStage: "bg-ti",
+          substages: [
+            { id: "3.4.1", label: "3.4.1. Transportation", cssSub: "bg-sub4",
+              disciplines: {
+                ct: [
+                  {p:0, id:"3.4.1.1.1.", name:"COG 표식확인", path:"3. Execution/3.4. Transportation & Installation/3.4.1. Transportation/3.4.1.1. Constructability Team/3.4.1.1.1. COG 표식확인"},
+                  {p:0, id:"3.4.1.1.2.", name:"Motion analysis, Sea fastening review, Lifting lug 확인", path:"3. Execution/3.4. Transportation & Installation/3.4.1. Transportation/3.4.1.1. Constructability Team/3.4.1.1.2. Motion analysis, Sea fastening review, Crane설치 경우에 필요한 Lifting lug 상태 확인"},
+                  {p:0, id:"3.4.1.1.3.", name:"Load spreading beam 준비 여부 등 운송 항차 및 일정 확인", path:"3. Execution/3.4. Transportation & Installation/3.4.1. Transportation/3.4.1.1. Constructability Team/3.4.1.1.3. Load spreading beam 준비 여부 등 운송 항차 및 일정 확인"},
+                  {p:1, id:"3.4.1.1.4.", name:"현장 연결부위(SWHU) 준비작업 확인", path:"3. Execution/3.4. Transportation & Installation/3.4.1. Transportation/3.4.1.1. Constructability Team/3.4.1.1.4. 현장 연결부위(SWHU) 준비작업 확인"},
+                ],
+                pm_cost:[], pm_sched:[], pm_coord:[],
+                eng: [], proc: [],
+                const: [
+                  {p:0, id:"3.4.1.5.1.", name:"Sea fastening", path:"3. Execution/3.4. Transportation & Installation/3.4.1. Transportation/3.4.1.5. Construction/3.4.1.5.1 Sea fastening"},
+                  {p:0, id:"3.4.1.5.2.", name:"MWS Approval", path:"3. Execution/3.4. Transportation & Installation/3.4.1. Transportation/3.4.1.5. Construction/3.4.1.5.2. MWS Approval"},
+                  {p:1, id:"3.4.1.5.3.", name:"Sailing Out", path:"3. Execution/3.4. Transportation & Installation/3.4.1. Transportation/3.4.1.5. Construction/3.4.1.5.3. Sailing Out"},
+                ],
+                qhse: [
+                  {p:0, id:"3.4.1.6.1.", name:"Record of Steel & Pipe Coordinates", path:"3. Execution/3.4. Transportation & Installation/3.4.1. Transportation/3.4.1.6. Q-HSE/3.4.1.6.1. Record of Steel & Pipe Coordinates"},
+                ]
+              }
+            },
+            { id: "3.4.2", label: "3.4.2. Installation", cssSub: "bg-sub4",
+              disciplines: {
+                ct: [
+                  {p:1, id:"3.4.2.1.1.", name:"Witness preparations and installation at site by SPMT or Cranes", path:"3. Execution/3.4. Transportation & Installation/3.4.2. Installation/3.4.2.1. Constructability Team"},
+                  {p:0, id:"3.4.2.1.2.", name:"Turnover coordination of modules", path:"3. Execution/3.4. Transportation & Installation/3.4.2. Installation/3.4.2.1. Constructability Team/3.4.2.1.2. Turnover coordination of modules"},
+                ],
+                pm_cost:[
+                  {p:0, id:"3.4.2.2.1.1.", name:"Contract settlement with Shop Fabricator", path:"3. Execution/3.4. Transportation & Installation/3.4.2. Installation/3.4.2.2. Project Management/3.4.2.2.1. Cost and Contracting"},
+                ],
+                pm_sched:[], pm_coord:[],
+                eng: [], proc: [],
+                const: [
+                  {p:1, id:"3.4.2.5.1.", name:"모듈 설치 Sequence 확인", path:"3. Execution/3.4. Transportation & Installation/3.4.2. Installation/3.4.2.5. Construction/3.4.2.5.1. 모듈 설치 Sequence 확인"},
+                  {p:0, id:"3.4.2.5.2.", name:"Heavy haul path 하부 U-G pipes Damage 검토", path:"3. Execution/3.4. Transportation & Installation/3.4.2. Installation/3.4.2.5. Construction/3.4.2.5.2. Heavy haul path 하부 U-G pipes Damage 검토"},
+                  {p:1, id:"3.4.2.5.3.", name:"Repair Work 정리", path:"3. Execution/3.4. Transportation & Installation/3.4.2. Installation/3.4.2.5. Construction/3.4.2.5.3. Repair Work 정리"},
+                  {p:0, id:"3.4.2.5.3.a.", name:"제작결함", path:"3. Execution/3.4. Transportation & Installation/3.4.2. Installation/3.4.2.5. Construction/3.4.2.5.3. Repair Work 정리/3.4.2.3.3. a.제작결함", sub:true},
+                  {p:0, id:"3.4.2.5.3.b.", name:"운송결함", path:"3. Execution/3.4. Transportation & Installation/3.4.2. Installation/3.4.2.5. Construction/3.4.2.5.3. Repair Work 정리/3.4.2.3.3. b.운송결함", sub:true},
+                  {p:0, id:"3.4.2.5.3.c.", name:"불가항력 - 보험", path:"3. Execution/3.4. Transportation & Installation/3.4.2. Installation/3.4.2.5. Construction/3.4.2.5.3. Repair Work 정리/3.4.2.3.3. c.불가항력 - 보험", sub:true},
+                  {p:0, id:"3.4.2.5.4.", name:"Coordinate out of Tolerance Problems & Record findings", path:"3. Execution/3.4. Transportation & Installation/3.4.2. Installation/3.4.2.5. Construction/3.4.2.5.4. Coordinate out of Tolerance Problems & Record findings"},
+                  {p:0, id:"3.4.2.5.5.", name:"Punch Clear", path:"3. Execution/3.4. Transportation & Installation/3.4.2. Installation/3.4.2.5. Construction/3.4.2.5.5. Punch Clear"},
+                ],
+                qhse: [
+                  {p:0, id:"3.4.2.6.1.", name:"Record of Steel & Pipe Coordinates after Transportation", path:"3. Execution/3.4. Transportation & Installation/3.4.2. Installation/3.4.2.6. Q-HSE/3.4.2.6.1. Record of Steel & Pipe Coordinates after Transportation"},
+                  {p:0, id:"3.4.2.6.2.", name:"Record of Steel & Pipe Coordinates before Turnover", path:"3. Execution/3.4. Transportation & Installation/3.4.2. Installation/3.4.2.6. Q-HSE/3.4.2.6.2. Record of Steel & Pipe Coordinates before Turnover"},
+                  {p:0, id:"3.4.2.6.3.", name:"Punch Control", path:"3. Execution/3.4. Transportation & Installation/3.4.2. Installation/3.4.2.6. Q-HSE/3.4.2.6.3. Punch Control"},
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+// ========== RENDERING ENGINE ==========
+let DATA = {};
+
+function loadData() {
+  // Use data from folder_data.js (loaded via <script src>)
+  if (window.FOLDER_DATA) {
+    DATA = window.FOLDER_DATA;
+    render();
+    const msg = `Loaded ${Object.keys(DATA).length} folders (from folder_data.js)`;
+    document.getElementById('status').textContent = msg;
+    if (document.getElementById('status2')) document.getElementById('status2').textContent = msg;
+  } else {
+    // Fallback: try fetch
+    fetch('folder_data.json')
+      .then(r => { if(!r.ok) throw new Error(); return r.json(); })
+      .then(d => { DATA = d; render(); const m = `Loaded ${Object.keys(d).length} folders`; document.getElementById('status').textContent = m; if(document.getElementById('status2')) document.getElementById('status2').textContent = m; })
+      .catch(e => { DATA = {}; render(); document.getElementById('status').textContent = 'No data loaded'; });
+  }
+}
+
+// Data loaded from folder_data.js (172 folders, all verified by Glob scan)
+
+function getFolderInfo(path) {
+  if (!path) return { count: -1, files: [] };
+  // Exact match first
+  if (DATA[path]) return DATA[path];
+  // Normalize backslash
+  const np = path.replace(/\\/g, '/');
+  if (DATA[np]) return DATA[np];
+  // Fuzzy: match by last folder segment
+  const lastSeg = np.split('/').pop();
+  for (const k of Object.keys(DATA)) {
+    if (k.endsWith('/' + lastSeg) || k.endsWith(lastSeg)) return DATA[k];
+  }
+  // Fuzzy: match by activity number pattern (e.g. "3.1.1.3. Risk hedging")
+  const numMatch = lastSeg.match(/^[\d.]+/);
+  if (numMatch) {
+    const num = numMatch[0];
+    // Search last segment of all DATA keys
+    for (const k of Object.keys(DATA)) {
+      const kLast = k.split('/').pop();
+      if (kLast.startsWith(num)) return DATA[k];
+    }
+    // Search ANY segment of DATA keys for the number
+    for (const k of Object.keys(DATA)) {
+      const segs = k.split('/');
+      for (const seg of segs) {
+        if (seg.startsWith(num)) return DATA[k];
+      }
+    }
+    // Aggregate: find all DATA entries whose path contains a segment starting with this number
+    const aggFiles = [];
+    for (const k of Object.keys(DATA)) {
+      const segs = k.split('/');
+      for (const seg of segs) {
+        if (seg.startsWith(num) && DATA[k].files) {
+          for (const f of DATA[k].files) aggFiles.push(f);
+          break;
+        }
+      }
+    }
+    if (aggFiles.length > 0) return { count: aggFiles.length, files: aggFiles };
+  }
+  return { count: -1, files: [] };
+}
+
+function renderAct(a) {
+  const info = getFolderInfo(a.path);
+  const count = info.count >= 0 ? info.count : -1;
+  const hasFiles = count > 0;
+  const isEmpty = count === 0;
+  const noData = count < 0 && !a.path;
+
+  // Color class based on priority + file existence
+  let cls = 'ck';
+  if (a.p === 3) cls = 'cr';
+  else if (a.p === 2) cls = 'cm';
+  else if (hasFiles) cls = 'cb';
+  else if (isEmpty || noData) cls = 'cg';
+
+  // Check mark column (separate)
+  let chkContent = '';
+  let chkCls = '';
+  if (a.p === 3) { chkContent = '&#10003;&#10003;&#10003;'; chkCls = 'chk-r'; }
+  else if (a.p === 2) { chkContent = '&#10003;&#10003;'; chkCls = 'chk-m'; }
+  else if (a.p === 1) { chkContent = '&#10003;'; chkCls = 'chk-b'; }
+
+  // Use files.length as the real count, fall back to count field only if files empty
+  const realCount = (info.files && info.files.length > 0) ? info.files.length : count;
+
+  // File count badge - always show actual files.length
+  let badge = '';
+  if (info.files && info.files.length > 0) badge = `<span class="fc fc-g">${info.files.length}</span>`;
+  else if (count > 0) badge = `<span class="fc fc-g" style="background:#ff9800">${count}?</span>`;
+  else if (count === 0) badge = `<span class="fc fc-x">0</span>`;
+
+  // File list - show ALL files, no truncation
+  let fileList = '';
+  if (info.files && info.files.length > 0) {
+    const items = info.files.map(f => {
+      const dot = f.lastIndexOf('.');
+      const name = dot > 0 ? f.substring(0, dot) : f;
+      const ext = dot > 0 ? f.substring(dot) : '';
+      return `<div class="f">${esc(name)}<span class="ext">${esc(ext)}</span></div>`;
+    }).join('');
+    fileList = `<div class="fl">${items}</div>`;
+  } else if (count > 0) {
+    fileList = `<div class="fl"><div class="f" style="color:#f57f17">&#9888; ${count} files exist but names not yet scanned</div></div>`;
+  }
+
+  const subCls = a.sub ? ' si' : '';
+  return `<div class="act ${cls}${subCls}" onclick="togF(this)"><div class="chk-col ${chkCls}">${chkContent}</div><div class="act-body"><span class="n">${esc(a.id)}</span> ${esc(a.name)} ${badge}${fileList}</div></div>`;
+}
+
+function esc(s) { return s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''; }
+
+function renderDiscCol(acts) {
+  if (!acts || acts.length === 0) return '<td class="cell"><div class="act cg" style="font-size:8px">&nbsp;</div></td>';
+  return '<td class="cell">' + acts.map(renderAct).join('') + '</td>';
+}
+
+function renderPMCol(cost, sched, coord) {
+  const rc = (acts) => !acts || acts.length===0 ? '<td class="cell"></td>' : '<td class="cell">'+acts.map(renderAct).join('')+'</td>';
+  return rc(cost) + rc(sched) + rc(coord);
+}
+
+function render() {
+  // Count folders (with path) and files per discipline
+  const discKeys = ['ct','pm_cost','pm_sched','pm_coord','eng','proc','const','qhse'];
+  const dStat = {};
+  for (const k of discKeys) dStat[k] = {acts:0, folders:0, files:0};
+  for (const phase of WORKFLOW.phases) {
+    for (const stage of phase.stages) {
+      for (const ss of stage.substages) {
+        for (const k of discKeys) {
+          const acts = ss.disciplines[k] || [];
+          for (const a of acts) {
+            dStat[k].acts++;
+            if (a.path) {
+              dStat[k].folders++;
+              const info = getFolderInfo(a.path);
+              if (info.count > 0) dStat[k].files += info.count;
+            }
+          }
+        }
+      }
+    }
+  }
+  function dsBadge(k) {
+    return '<br><span style="font-size:7px;color:#555;font-weight:normal">Act ' + dStat[k].acts + ' 📁' + dStat[k].folders + ' 📎' + dStat[k].files + '</span>';
+  }
+
+  let html = `<table class="main">
+  <colgroup><col class="c-phase"><col class="c-stage"><col class="c-sub">
+  <col><col><col><col><col><col><col><col></colgroup>
+  <thead>
+  <tr><th style="background:#111;color:#fff;font-size:9px">Phase</th>
+  <th style="background:#222;color:#fff;font-size:9px">Stage</th>
+  <th style="background:#333;color:#fff;font-size:9px">Sub</th>
+  <th class="dh dh-ct">1. Module Part</th>
+  <th class="dh dh-pm" colspan="3">2. Project Management</th>
+  <th class="dh dh-eng">3. Engineering</th>
+  <th class="dh dh-proc">4. Procurement</th>
+  <th class="dh dh-const">5. Construction</th>
+  <th class="dh dh-qhse">6. Q-HSE</th></tr>
+  <tr><th colspan="3" style="background:#444;color:#fff;font-size:8px;padding:2px">Folder Name = Activity</th>
+  <th style="background:#e8d5f5;font-size:8px;padding:2px">1.1 Constructability Team${dsBadge('ct')}</th>
+  <th style="background:#bbdefb;font-size:8px;padding:2px;color:#1565c0">2.1 Cost&Contr.${dsBadge('pm_cost')}</th>
+  <th style="background:#bbdefb;font-size:8px;padding:2px;color:#1565c0">2.2 Schedule${dsBadge('pm_sched')}</th>
+  <th style="background:#bbdefb;font-size:8px;padding:2px;color:#1565c0">2.3 Coordination${dsBadge('pm_coord')}</th>
+  <th style="background:#fff9c4;font-size:8px;padding:2px">3. Engineering${dsBadge('eng')}</th>
+  <th style="background:#c8e6c9;font-size:8px;padding:2px">4. Procurement${dsBadge('proc')}</th>
+  <th style="background:#ffccbc;font-size:8px;padding:2px">5. Construction${dsBadge('const')}</th>
+  <th style="background:#e1bee7;font-size:8px;padding:2px">6. Q-HSE${dsBadge('qhse')}</th></tr>
+  </thead><tbody>`;
+
+  for (const phase of WORKFLOW.phases) {
+    let totalRows = 0;
+    for (const stage of phase.stages) {
+      totalRows += stage.substages.length;
+    }
+
+    let phaseFirst = true;
+    for (const stage of phase.stages) {
+      let stageFirst = true;
+      for (const ss of stage.substages) {
+        const d = ss.disciplines;
+        html += '<tr>';
+        if (phaseFirst) {
+          html += `<td rowspan="${totalRows}" class="vlbl vlbl-phase ${phase.cssPhase}">${esc(phase.label)}</td>`;
+          phaseFirst = false;
+        }
+        if (stageFirst && stage.label) {
+          html += `<td rowspan="${stage.substages.length}" class="vlbl vlbl-stage ${stage.cssStage}">${esc(stage.label)}</td>`;
+          stageFirst = false;
+        } else if (!stage.label && stageFirst) {
+          html += `<td class="vlbl" style="background:#ddd">&nbsp;</td>`;
+          stageFirst = false;
+        }
+        if (ss.label) {
+          html += `<td class="vlbl vlbl-sub ${ss.cssSub||'bg-sub1'}">${esc(ss.label)}</td>`;
+        } else {
+          html += `<td class="vlbl" style="background:#eee">&nbsp;</td>`;
+        }
+
+        html += renderDiscCol(d.ct);
+        html += renderPMCol(d.pm_cost, d.pm_sched, d.pm_coord);
+        html += renderDiscCol(d.eng);
+        html += renderDiscCol(d.proc);
+        html += renderDiscCol(d.const);
+        html += renderDiscCol(d.qhse);
+        html += '</tr>';
+      }
+    }
+  }
+
+  html += '</tbody></table>';
+  document.getElementById('app').innerHTML = html;
+  buildDashboard();
+  buildProgressDash();
+
+  // DEBUG: Activity count per discipline
+  const dbg = {};
+  const dkeys = ['ct','pm_cost','pm_sched','pm_coord','eng','proc','const','qhse'];
+  for (const k of dkeys) dbg[k] = 0;
+  for (const phase of WORKFLOW.phases) {
+    for (const stage of phase.stages) {
+      for (const ss of stage.substages) {
+        for (const k of dkeys) dbg[k] += (ss.disciplines[k]||[]).length;
+      }
+    }
+  }
+  let dbgTotal = 0;
+  let dbgTxt = 'Activity Count: ';
+  for (const k of dkeys) { dbgTxt += k+'='+dbg[k]+' '; dbgTotal += dbg[k]; }
+  dbgTxt += 'TOTAL='+dbgTotal+' (PDF=302)';
+  console.log(dbgTxt);
+  document.getElementById('status').textContent = dbgTxt;
+}
+
+function togF(el) { const f = el.querySelector('.fl'); if (f) f.classList.toggle('show'); }
+
+// Global state for dashboard interactivity
+let _DISC, _actCount, _totalAct, _progDISC, _progStats, _progTotalAll, _progHasAll;
+let _selectedDisc = null;
+
+// Load on page ready
+loadData();
+
+// ========== DASHBOARD ==========
+
+function buildDashboard() {
+  // Raw keys for counting
+  const RAW_KEYS = ['ct','pm_cost','pm_sched','pm_coord','eng','proc','const','qhse'];
+
+  // 1. Count Activities per discipline (gray 제외)
+  const actCount = {};
+  for (const k of RAW_KEYS) actCount[k] = 0;
+  for (const phase of WORKFLOW.phases) {
+    for (const stage of phase.stages) {
+      for (const ss of stage.substages) {
+        for (const k of RAW_KEYS) {
+          const acts = ss.disciplines[k] || [];
+          let lastParentCls = 'cg';
+          for (const a of acts) {
+            const info = getFolderInfo(a.path);
+            const count = info.count >= 0 ? info.count : -1;
+            let cls = 'ck';
+            if (a.p === 3) cls = 'cr';
+            else if (a.p === 2) cls = 'cm';
+            else if (count > 0) cls = 'cb';
+            else if (count === 0 || (count < 0 && !a.path)) cls = 'cg';
+            if (!a.sub) lastParentCls = cls;
+            const effective = (cls === 'cg' && a.sub && lastParentCls !== 'cg' && lastParentCls !== 'ck') ? lastParentCls : cls;
+            if (effective !== 'cg') actCount[k]++;
+          }
+        }
+      }
+    }
+  }
+
+  // 2. Count Data (files)
+  const dataCount = {};
+  for (const k of RAW_KEYS) dataCount[k] = 0;
+  if (DATA) {
+    for (const [path, info] of Object.entries(DATA)) {
+      const cnt = (info.files && info.files.length > 0) ? info.files.length : 0;
+      if (cnt === 0) continue;
+      const p = path.toLowerCase();
+      if (p.includes('constructability team')) dataCount.ct += cnt;
+      else if (p.includes('cost & contracting') || p.includes('cost and contracting')) dataCount.pm_cost += cnt;
+      else if (p.includes('schedule') && p.includes('project management')) dataCount.pm_sched += cnt;
+      else if (p.includes('coordination') && p.includes('project management')) dataCount.pm_coord += cnt;
+      else if (p.includes('engineering') && !p.includes('3.2. engineering')) dataCount.eng += cnt;
+      else if (p.includes('3.2. engineering') && p.includes('constructability')) dataCount.ct += cnt;
+      else if (p.includes('3.2. engineering') && p.includes('engineering/')) dataCount.eng += cnt;
+      else if (p.includes('procurement')) dataCount.proc += cnt;
+      else if (p.includes('construction')) dataCount.const += cnt;
+      else if (p.includes('q-hse') || p.includes('qhse')) dataCount.qhse += cnt;
+      else dataCount.eng += cnt;
+    }
+  }
+
+  // PM 합산
+  actCount.pm = actCount.pm_cost + actCount.pm_sched + actCount.pm_coord;
+  dataCount.pm = dataCount.pm_cost + dataCount.pm_sched + dataCount.pm_coord;
+
+  // 3. Table display order (PM group: summary + 3 sub-rows)
+  const ROWS = [
+    {key:'ct', label:'1. Constructability Team', part:'', color:'#4a148c', div:'GE본부', divColor:'#2e7d32', divSpan:2},
+    {key:'eng', label:'3. Engineering', part:'', color:'#b8860b', div:'', divSpan:0},
+    {key:'pm', label:'2. Project Management', part:'(소계)', color:'#1565c0', div:'플랜트부문', divColor:'#1565c0', divSpan:6, group:true},
+    {key:'pm_cost', label:'', part:'2.1 Cost & Contracting', color:'#1565c0', sub:true},
+    {key:'pm_sched', label:'', part:'2.2 Schedule', color:'#1976d2', sub:true},
+    {key:'pm_coord', label:'', part:'2.3 Coordination', color:'#2196f3', sub:true},
+    {key:'const', label:'5. Construction', part:'', color:'#d84315', div:'', divSpan:0},
+    {key:'qhse', label:'6. Q-HSE', part:'', color:'#6a1b9a', div:'', divSpan:0},
+    {key:'proc', label:'4. Procurement', part:'', color:'#ff9800', div:'조달본부', divColor:'#ff9800', divSpan:1},
+  ];
+
+  // Chart uses 6 combined entries
+  const DISC = [
+    {key:'ct', label:'1. Constructability Team', color:'#4a148c'},
+    {key:'eng', label:'3. Engineering', color:'#b8860b'},
+    {key:'pm', label:'2. Project Management', color:'#1565c0'},
+    {key:'const', label:'5. Construction', color:'#d84315'},
+    {key:'qhse', label:'6. Q-HSE', color:'#6a1b9a'},
+    {key:'proc', label:'4. Procurement', color:'#ff9800'},
+  ];
+  _DISC = DISC;
+
+  let totalAct = 0, totalData = 0;
+  for (const d of DISC) { totalAct += actCount[d.key]; totalData += dataCount[d.key]; }
+  _actCount = actCount; _totalAct = totalAct;
+
+  // Build rows
+  let rows = '';
+  for (const d of ROWS) {
+    const ac = actCount[d.key];
+    const dc = dataCount[d.key];
+    const actPct = totalAct > 0 ? (ac/totalAct*100).toFixed(1) : '0.0';
+    const dataPct = totalData > 0 ? (dc/totalData*100).toFixed(1) : '0.0';
+    const barW = Math.max(2, parseFloat(actPct)*2);
+    const clickKey = d.sub ? d.key : (d.group ? 'pm' : d.key);
+    let divCell = '';
+    if (d.divSpan > 0) {
+      divCell = `<td rowspan="${d.divSpan}" style="padding:2px;border:1px solid #ccc;text-align:center;vertical-align:middle;background:${d.divColor};color:#fff;font-weight:bold;font-size:7px;writing-mode:vertical-rl;letter-spacing:1px;width:24px">${d.div}</td>`;
+    }
+    if (d.group) {
+      // PM summary row
+      rows += `<tr data-disc="pm" onclick="selectDisc('pm')" style="cursor:pointer;background:#e8eef8;font-weight:bold;transition:background .15s" onmouseover="this.style.background='#d0ddf0'" onmouseout="this.style.background=(_selectedDisc==='pm'?'#d4c5f0':'#e8eef8')">
+        ${divCell}
+        <td style="padding:4px 5px;border:1px solid #ddd;font-size:8px">FEED +<br>Execution</td>
+        <td style="padding:4px 5px;border:1px solid #ddd;font-weight:bold;font-size:9px;border-left:3px solid ${d.color}">${d.label}</td>
+        <td style="padding:4px 5px;border:1px solid #ddd;color:#1565c0;font-size:8px;font-weight:bold">${d.part}</td>
+        <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;font-weight:bold">${ac}</td>
+        <td style="padding:0;border:1px solid #ddd;overflow:hidden"><div style="background:${d.color};height:14px;width:${barW}px;opacity:0.7"></div><span style="font-size:8px;position:relative;top:-14px;left:${barW+3}px;color:#333">${actPct}%</span></td>
+        <td style="padding:4px 5px;border:1px solid #ddd;text-align:right;font-weight:bold">${dc.toLocaleString()}</td>
+        <td style="padding:0;border:1px solid #ddd;overflow:hidden"><div style="background:${d.color};height:14px;width:${Math.max(2,parseFloat(dataPct)*2)}px;opacity:0.5"></div><span style="font-size:8px;position:relative;top:-14px;left:${Math.max(2,parseFloat(dataPct)*2)+3}px;color:#333">${dataPct}%</span></td>
+      </tr>`;
+    } else if (d.sub) {
+      // PM sub-row (indented, lighter)
+      rows += `<tr data-disc="${d.key}" onclick="selectDisc('${d.key}')" style="cursor:pointer;background:#f4f7fc;transition:background .15s" onmouseover="this.style.background='#e0e8f4'" onmouseout="this.style.background=(_selectedDisc==='${d.key}'?'#d4c5f0':'#f4f7fc')">
+        <td style="padding:3px 5px;border:1px solid #eee;font-size:7px;color:#999">┗</td>
+        <td style="padding:3px 5px;border:1px solid #eee;font-size:8px;color:#666;padding-left:14px;border-left:3px solid ${d.color}">&nbsp;</td>
+        <td style="padding:3px 5px;border:1px solid #eee;color:#555;font-size:9px">${d.part}</td>
+        <td style="padding:3px 5px;border:1px solid #eee;text-align:center;color:#555">${ac}</td>
+        <td style="padding:0;border:1px solid #eee;overflow:hidden"><div style="background:${d.color};height:10px;width:${barW}px;opacity:0.5"></div><span style="font-size:7px;position:relative;top:-10px;left:${barW+3}px;color:#999">${actPct}%</span></td>
+        <td style="padding:3px 5px;border:1px solid #eee;text-align:right;color:#555">${dc.toLocaleString()}</td>
+        <td style="padding:0;border:1px solid #eee;overflow:hidden"><div style="background:${d.color};height:10px;width:${Math.max(2,parseFloat(dataPct)*2)}px;opacity:0.3"></div><span style="font-size:7px;position:relative;top:-10px;left:${Math.max(2,parseFloat(dataPct)*2)+3}px;color:#999">${dataPct}%</span></td>
+      </tr>`;
+    } else {
+      // Normal row
+      rows += `<tr data-disc="${d.key}" onclick="selectDisc('${d.key}')" style="cursor:pointer;transition:background .15s" onmouseover="this.style.background='#e8e0f0'" onmouseout="this.style.background=(_selectedDisc==='${d.key}'?'#d4c5f0':'')">
+        ${divCell}
+        <td style="padding:4px 5px;border:1px solid #ddd;font-size:8px">FEED +<br>Execution</td>
+        <td style="padding:4px 5px;border:1px solid #ddd;font-weight:bold;font-size:9px;border-left:3px solid ${d.color}">${d.label}</td>
+        <td style="padding:4px 5px;border:1px solid #ddd;color:#666;font-size:9px">${d.part}</td>
+        <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;font-weight:bold">${ac}</td>
+        <td style="padding:0;border:1px solid #ddd;overflow:hidden"><div style="background:${d.color};height:14px;width:${barW}px;opacity:0.7"></div><span style="font-size:8px;position:relative;top:-14px;left:${barW+3}px;color:#333">${actPct}%</span></td>
+        <td style="padding:4px 5px;border:1px solid #ddd;text-align:right;font-weight:bold">${dc.toLocaleString()}</td>
+        <td style="padding:0;border:1px solid #ddd;overflow:hidden"><div style="background:${d.color};height:14px;width:${Math.max(2,parseFloat(dataPct)*2)}px;opacity:0.5"></div><span style="font-size:8px;position:relative;top:-14px;left:${Math.max(2,parseFloat(dataPct)*2)+3}px;color:#333">${dataPct}%</span></td>
+      </tr>`;
+    }
+  }
+  document.getElementById('dashBody').innerHTML = rows;
+
+  // Footer
+  document.getElementById('dashFoot').innerHTML = `<tr style="background:#333;color:#fff;font-weight:bold">
+    <td colspan="4" style="padding:5px 6px;border:1px solid #555;text-align:right">Total</td>
+    <td style="padding:5px 6px;border:1px solid #555;text-align:center">${totalAct}</td>
+    <td style="padding:5px 6px;border:1px solid #555"><span style="color:#ff0;font-size:9px">100%</span></td>
+    <td style="padding:5px 6px;border:1px solid #555;text-align:right">${totalData.toLocaleString()}</td>
+    <td style="padding:5px 6px;border:1px solid #555"><span style="color:#ff0;font-size:9px">100%</span></td>
+  </tr>`;
+
+  // 4. Draw donut chart (6 slices, PM combined)
+  drawDonut(DISC, actCount, totalAct);
+}
+
+function setupHiDPI(canvas, cssW, cssH) {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  canvas.style.width = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return ctx;
+}
+
+function drawDonut(DISC, actCount, totalAct, selectedKey) {
+  const canvas = document.getElementById('donutChart');
+  if (!canvas) return;
+  const cssW = 440, cssH = 360;
+  const ctx = setupHiDPI(canvas, cssW, cssH);
+  const W = cssW, H = cssH;
+  const cx = W/2, cy = H/2 + 5;
+  ctx.clearRect(0,0,W,H);
+  if (totalAct === 0) return;
+
+  // Ring radii: inner=detail(PM split), mid=discipline, outer=본부(thin)
+  const detR = [50, 90], discR = [90, 135], divR = [137, 158];
+
+  // Division definitions
+  const DIVS = [
+    {key:'ge', label:'GE본부', color:'#2e7d32', children:['ct','eng']},
+    {key:'plant', label:'플랜트부문', color:'#1565c0', children:['pm_cost','pm_sched','pm_coord','const','qhse']},
+    {key:'proc_div', label:'조달본부', color:'#ff9800', children:['proc']},
+  ];
+  // Detail ring items (PM split)
+  const DETAIL = [
+    {key:'ct', label:'1. CT', color:'#4a148c', disc:'ct'},
+    {key:'eng', label:'3. Eng', color:'#b8860b', disc:'eng'},
+    {key:'pm_cost', label:'2.1 Cost', color:'#1565c0', disc:'pm'},
+    {key:'pm_sched', label:'2.2 Schedule', color:'#1976d2', disc:'pm'},
+    {key:'pm_coord', label:'2.3 Coord', color:'#2196f3', disc:'pm'},
+    {key:'const', label:'5. Const', color:'#d84315', disc:'const'},
+    {key:'qhse', label:'6. Q-HSE', color:'#6a1b9a', disc:'qhse'},
+    {key:'proc', label:'4. Proc', color:'#ff9800', disc:'proc'},
+  ];
+
+  // Expand DISC order into detail keys
+  const orderedKeys = [];
+  for (const d of DISC) {
+    if (d.key === 'pm') orderedKeys.push('pm_cost','pm_sched','pm_coord');
+    else orderedKeys.push(d.key);
+  }
+
+  // Outer ring slices (detail)
+  let angle = -Math.PI/2;
+  const detSlices = [];
+  for (const key of orderedKeys) {
+    const frac = actCount[key] / totalAct;
+    const det = DETAIL.find(d => d.key === key);
+    if (!det || frac <= 0) continue;
+    detSlices.push({...det, frac, startA:angle, endA:angle+frac*Math.PI*2});
+    angle += frac * Math.PI * 2;
+  }
+
+  // Middle ring slices (discipline) - grouped from detail
+  const discSlices = [];
+  for (const d of DISC) {
+    const childKeys = d.key === 'pm' ? ['pm_cost','pm_sched','pm_coord'] : [d.key];
+    const children = detSlices.filter(s => childKeys.includes(s.key));
+    if (children.length === 0) continue;
+    discSlices.push({...d, startA:children[0].startA, endA:children[children.length-1].endA, frac:children.reduce((s,c)=>s+c.frac,0)});
+  }
+
+  // Inner ring slices (division) - grouped from detail
+  const divSlices = [];
+  for (const dv of DIVS) {
+    const children = detSlices.filter(s => dv.children.includes(s.key));
+    if (children.length === 0) continue;
+    divSlices.push({...dv, startA:children[0].startA, endA:children[children.length-1].endA, frac:children.reduce((s,c)=>s+c.frac,0)});
+  }
+
+  // Selection helper
+  const pmSubs = ['pm_cost','pm_sched','pm_coord'];
+  function isSel(key, ring) {
+    if (!selectedKey) return false;
+    if (key === selectedKey) return true;
+    if (ring === 'det') return (selectedKey === 'pm' && pmSubs.includes(key)) || (pmSubs.includes(selectedKey) && key === selectedKey);
+    if (ring === 'disc') return (pmSubs.includes(selectedKey) && key === 'pm');
+    if (ring === 'div') {
+      const dv = DIVS.find(d => d.key === key);
+      if (!dv) return false;
+      if (dv.children.includes(selectedKey)) return true;
+      if (selectedKey === 'pm') return dv.children.some(c => pmSubs.includes(c));
+      return false;
+    }
+    return false;
+  }
+
+  // 3D depth for outer ring (본부)
+  for (const sl of divSlices) {
+    ctx.beginPath();
+    ctx.arc(cx, cy+8, divR[1], sl.startA, sl.endA);
+    ctx.arc(cx, cy+8, divR[0], sl.endA, sl.startA, true);
+    ctx.closePath();
+    ctx.fillStyle = sl.color;
+    ctx.globalAlpha = 0.2;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  // Draw inner ring (본부)
+  for (const sl of divSlices) {
+    const sel = isSel(sl.key, 'div');
+    ctx.beginPath();
+    ctx.arc(cx, cy, divR[1], sl.startA, sl.endA);
+    ctx.arc(cx, cy, divR[0], sl.endA, sl.startA, true);
+    ctx.closePath();
+    ctx.fillStyle = sl.color;
+    ctx.globalAlpha = selectedKey && !sel ? 0.2 : 0.85;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  // Draw middle ring (discipline) - no ring boundary stroke
+  for (const sl of discSlices) {
+    const sel = isSel(sl.key, 'disc');
+    ctx.beginPath();
+    ctx.arc(cx, cy, discR[1], sl.startA, sl.endA);
+    ctx.arc(cx, cy, discR[0], sl.endA, sl.startA, true);
+    ctx.closePath();
+    const grad = ctx.createRadialGradient(cx, cy, discR[0], cx, cy, discR[1]);
+    grad.addColorStop(0, sl.color);
+    grad.addColorStop(1, lighten(sl.color, 30));
+    ctx.fillStyle = grad;
+    ctx.globalAlpha = selectedKey && !sel ? 0.2 : 1;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  // Radial dividers only (between slices)
+  for (let i = 0; i < discSlices.length; i++) {
+    const a = discSlices[i].startA;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(a)*detR[0], cy + Math.sin(a)*detR[0]);
+    ctx.lineTo(cx + Math.cos(a)*discR[1], cy + Math.sin(a)*discR[1]);
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+  }
+
+  // Draw inner ring (detail/PM split) - no ring boundary stroke
+  for (const sl of detSlices) {
+    const sel = isSel(sl.key, 'det');
+    ctx.beginPath();
+    ctx.arc(cx, cy, detR[1], sl.startA, sl.endA);
+    ctx.arc(cx, cy, detR[0], sl.endA, sl.startA, true);
+    ctx.closePath();
+    ctx.fillStyle = lighten(sl.color, 40);
+    ctx.globalAlpha = selectedKey && !sel ? 0.15 : 0.85;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  // Radial dividers for PM sub-parts only
+  for (const sl of detSlices) {
+    if (sl.disc !== 'pm') continue;
+    const a = sl.startA;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(a)*detR[0], cy + Math.sin(a)*detR[0]);
+    ctx.lineTo(cx + Math.cos(a)*detR[1], cy + Math.sin(a)*detR[1]);
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
+  }
+
+  // Label system: inside if fits, outside with leader line if not
+  const placedBoxes = [];
+  function overlaps(bx, by, bw, bh) {
+    for (const p of placedBoxes) {
+      if (bx-bw/2 < p.x+p.w/2 && bx+bw/2 > p.x-p.w/2 && by-bh/2 < p.y+p.h/2 && by+bh/2 > p.y-p.h/2) return true;
+    }
+    return false;
+  }
+  function addBox(bx, by, bw, bh) { placedBoxes.push({x:bx, y:by, w:bw, h:bh}); }
+
+  function drawRotText(lx, ly, midA, lines, font, alpha, strokeW) {
+    let rot = midA + Math.PI/2;
+    while (rot > Math.PI) rot -= 2*Math.PI;
+    while (rot < -Math.PI) rot += 2*Math.PI;
+    if (rot > Math.PI/2 || rot < -Math.PI/2) rot += Math.PI;
+    ctx.save();
+    ctx.translate(lx, ly);
+    ctx.rotate(rot);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = font; ctx.globalAlpha = alpha;
+    ctx.fillStyle = '#fff'; ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = strokeW;
+    const step = lines.length > 1 ? 11 : 0;
+    const sy = -(step * (lines.length - 1)) / 2;
+    for (let i = 0; i < lines.length; i++) {
+      ctx.strokeText(lines[i], 0, sy + i * step);
+      ctx.fillText(lines[i], 0, sy + i * step);
+    }
+    ctx.globalAlpha = 1; ctx.restore();
+  }
+
+  function labelInside(midA, labelR, lines, font, alpha, strokeW) {
+    const lx = cx + Math.cos(midA) * labelR;
+    const ly = cy + Math.sin(midA) * labelR;
+    ctx.font = font;
+    const tw = Math.max(...lines.map(l => ctx.measureText(l).width));
+    const th = lines.length * 12;
+    if (!overlaps(lx, ly, tw+4, th+2)) {
+      addBox(lx, ly, tw+4, th+2);
+      drawRotText(lx, ly, midA, lines, font, alpha, strokeW);
+      return true;
+    }
+    return false;
+  }
+
+  function labelOutside(midA, color, lines, font, alpha, strokeW) {
+    const outerEnd = divR[1] + 8;
+    const endX = cx + Math.cos(midA) * (divR[1] + 40);
+    const endY = cy + Math.sin(midA) * (divR[1] + 40);
+    ctx.font = font;
+    const tw = Math.max(...lines.map(l => ctx.measureText(l).width));
+    const th = lines.length * 12;
+    // Try several distances
+    for (let d = 30; d <= 60; d += 10) {
+      const ex = cx + Math.cos(midA) * (divR[1] + d);
+      const ey = cy + Math.sin(midA) * (divR[1] + d);
+      if (!overlaps(ex, ey, tw+4, th+2)) {
+        addBox(ex, ey, tw+4, th+2);
+        // Leader line
+        const sx = cx + Math.cos(midA) * (divR[1] + 2);
+        const sy2 = cy + Math.sin(midA) * (divR[1] + 2);
+        ctx.beginPath(); ctx.moveTo(sx, sy2); ctx.lineTo(ex, ey);
+        ctx.strokeStyle = color; ctx.lineWidth = 0.8; ctx.globalAlpha = alpha; ctx.stroke();
+        ctx.globalAlpha = 1;
+        // Text (horizontal for outside labels)
+        ctx.save();
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.font = font; ctx.globalAlpha = alpha;
+        ctx.fillStyle = '#333'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+        const step = lines.length > 1 ? 11 : 0;
+        const startY = -(step * (lines.length - 1)) / 2;
+        for (let i = 0; i < lines.length; i++) {
+          ctx.strokeText(lines[i], ex, ey + startY + i * step);
+          ctx.fillText(lines[i], ex, ey + startY + i * step);
+        }
+        ctx.globalAlpha = 1; ctx.restore();
+        return;
+      }
+    }
+  }
+
+  // Labels - middle ring (discipline names + %) - always try inside first
+  for (const sl of discSlices) {
+    const sel = isSel(sl.key, 'disc');
+    const midA = (sl.startA + sl.endA) / 2;
+    const labelR = (discR[0] + discR[1]) / 2 + 2;
+    const txt1 = sl.label.split('[')[0].split('(')[0].trim();
+    const txt2 = (sl.frac*100).toFixed(1)+'%';
+    const font = sel ? 'bold 10px Malgun Gothic' : 'bold 8px Malgun Gothic';
+    const alpha = selectedKey && !sel ? 0.3 : 1;
+    if (!labelInside(midA, labelR, [txt1, txt2], font, alpha, 2)) {
+      labelOutside(midA, sl.color, [txt1, txt2], font, alpha, 2);
+    }
+  }
+
+  // Labels - inner ring (PM sub-parts)
+  for (const sl of detSlices) {
+    if (sl.disc !== 'pm') continue;
+    const midA = (sl.startA + sl.endA) / 2;
+    const labelR = (detR[0] + detR[1]) / 2;
+    const alpha = selectedKey && !isSel(sl.key,'det') ? 0.3 : 1;
+    if (!labelInside(midA, labelR, [sl.label], 'bold 7px Malgun Gothic', alpha, 1.5)) {
+      labelOutside(midA, sl.color, [sl.label], 'bold 7px Malgun Gothic', alpha, 1.5);
+    }
+  }
+
+  // Labels - outer ring (본부)
+  for (const sl of divSlices) {
+    const midA = (sl.startA + sl.endA) / 2;
+    const labelR = (divR[0] + divR[1]) / 2;
+    const alpha = selectedKey && !isSel(sl.key,'div') ? 0.3 : 1;
+    if (!labelInside(midA, labelR, [sl.label], 'bold 7px Malgun Gothic', alpha, 1.5)) {
+      labelOutside(midA, sl.color, [sl.label], 'bold 7px Malgun Gothic', alpha, 1.5);
+    }
+  }
+
+  // Legend
+  let legend = '';
+  for (const sl of discSlices) {
+    const sel = isSel(sl.key, 'disc');
+    legend += `<span onclick="selectDisc('${sl.key}')" style="display:inline-flex;align-items:center;gap:3px;margin:1px 4px;cursor:pointer;opacity:${selectedKey && !sel ? 0.4 : 1};${sel?'font-weight:bold;text-decoration:underline':''}"><span style="width:10px;height:10px;background:${sl.color};border-radius:2px;display:inline-block"></span>${sl.label}</span>`;
+  }
+  document.getElementById('chartLegend').innerHTML = legend;
+}
+
+// ========== DASHBOARD 2: Progress (목표 vs 실적) ==========
+function buildProgressDash() {
+  const RAW_KEYS = ['ct','pm_cost','pm_sched','pm_coord','eng','proc','const','qhse'];
+  const stats = {};
+  for (const k of RAW_KEYS) stats[k] = {total:0, has:0};
+
+  for (const phase of WORKFLOW.phases) {
+    if (phase.id !== '3. Execution') continue;
+    for (const stage of phase.stages) {
+      for (const ss of stage.substages) {
+        for (const k of RAW_KEYS) {
+          const acts = ss.disciplines[k] || [];
+          for (const a of acts) {
+            stats[k].total++;
+            const info = getFolderInfo(a.path);
+            const count = info.count >= 0 ? info.count : -1;
+            if (count >= 0) stats[k].has++;  // folder exists on disk = 실적
+          }
+        }
+      }
+    }
+  }
+  stats.pm = {total: stats.pm_cost.total+stats.pm_sched.total+stats.pm_coord.total, has: stats.pm_cost.has+stats.pm_sched.has+stats.pm_coord.has};
+
+  // Display rows (PM group + sub)
+  const ROWS = [
+    {key:'ct', label:'1. Constructability Team', part:'', color:'#4a148c'},
+    {key:'pm', label:'2. Project Management', part:'(소계)', color:'#1565c0', group:true},
+    {key:'pm_cost', label:'', part:'2.1 Cost & Contracting', color:'#1565c0', sub:true},
+    {key:'pm_sched', label:'', part:'2.2 Schedule', color:'#1976d2', sub:true},
+    {key:'pm_coord', label:'', part:'2.3 Coordination', color:'#2196f3', sub:true},
+    {key:'eng', label:'3. Engineering', part:'', color:'#b8860b'},
+    {key:'proc', label:'4. Procurement', part:'', color:'#ff9800'},
+    {key:'const', label:'5. Construction', part:'', color:'#d84315'},
+    {key:'qhse', label:'6. Q-HSE', part:'', color:'#6a1b9a'},
+  ];
+
+  // Chart uses 6 combined
+  const DISC = [
+    {key:'ct', label:'1. Constructability Team', color:'#4a148c'},
+    {key:'pm', label:'2. Project Management', color:'#1565c0'},
+    {key:'eng', label:'3. Engineering', color:'#b8860b'},
+    {key:'proc', label:'4. Procurement', color:'#ff9800'},
+    {key:'const', label:'5. Construction', color:'#d84315'},
+    {key:'qhse', label:'6. Q-HSE', color:'#6a1b9a'},
+  ];
+
+  let totalAll=0, hasAll=0;
+  for (const d of DISC) { totalAll += stats[d.key].total; hasAll += stats[d.key].has; }
+  _progDISC = DISC; _progStats = stats; _progTotalAll = totalAll; _progHasAll = hasAll;
+
+  // Build rows
+  let rows = '';
+  for (const d of ROWS) {
+    const s = stats[d.key];
+    const remain = s.total - s.has;
+    const pct = s.total > 0 ? Math.round(s.has/s.total*100) : 0;
+    const hasPctOfTotal = totalAll > 0 ? (s.has/totalAll*100).toFixed(1) : '0.0';
+    const remainPctOfTotal = totalAll > 0 ? (remain/totalAll*100).toFixed(1) : '0.0';
+    const ratio = totalAll > 0 ? (s.total/totalAll*100).toFixed(1) : '0.0';
+
+    if (d.group) {
+      rows += `<tr data-disc="pm" onclick="selectDisc('pm')" style="cursor:pointer;background:#e8eef8;font-weight:bold">
+        <td style="padding:3px 5px;border:1px solid #ccc;font-size:9px">Execution</td>
+        <td style="padding:3px 5px;border:1px solid #ccc;font-weight:bold;font-size:9px;border-left:3px solid ${d.color}">${d.label}</td>
+        <td style="padding:3px 5px;border:1px solid #ccc;color:#1565c0;font-size:8px;font-weight:bold">${d.part}</td>
+        <td style="padding:3px 5px;border:1px solid #ccc;text-align:center;font-weight:bold">${s.total}</td>
+        <td style="padding:3px 5px;border:1px solid #ccc;text-align:center;font-weight:bold;color:#1565c0">${s.has}</td>
+        <td style="padding:3px 5px;border:1px solid #ccc;text-align:center;color:#1565c0;font-size:9px">${pct}%</td>
+        <td style="padding:3px 5px;border:1px solid #ccc;text-align:center;font-size:9px">${hasPctOfTotal}%</td>
+        <td style="padding:3px 5px;border:1px solid #ccc;text-align:center;font-weight:bold;font-size:10px">${ratio}%</td>
+      </tr>`;
+    } else if (d.sub) {
+      rows += `<tr data-disc="${d.key}" onclick="selectDisc('${d.key}')" style="cursor:pointer;background:#f4f7fc">
+        <td style="padding:2px 5px;border:1px solid #eee;font-size:8px;color:#999">┗</td>
+        <td style="padding:2px 5px;border:1px solid #eee;font-size:8px;color:#666;border-left:3px solid ${d.color}">&nbsp;</td>
+        <td style="padding:2px 5px;border:1px solid #eee;color:#555;font-size:9px">${d.part}</td>
+        <td style="padding:2px 5px;border:1px solid #eee;text-align:center;color:#555">${s.total}</td>
+        <td style="padding:2px 5px;border:1px solid #eee;text-align:center;color:#555">${s.has}</td>
+        <td style="padding:2px 5px;border:1px solid #eee;text-align:center;color:#999;font-size:8px">${pct}%</td>
+        <td style="padding:2px 5px;border:1px solid #eee;text-align:center;color:#999;font-size:8px">${hasPctOfTotal}%</td>
+        <td style="padding:2px 5px;border:1px solid #eee;text-align:center;color:#555;font-size:9px">${ratio}%</td>
+      </tr>`;
+    } else {
+      rows += `<tr data-disc="${d.key}" onclick="selectDisc('${d.key}')" style="cursor:pointer;transition:background .15s" onmouseover="this.style.background='#e0e8f0'" onmouseout="this.style.background=(_selectedDisc==='${d.key}'?'#d4c5f0':'')">
+        <td style="padding:3px 5px;border:1px solid #ccc;font-size:9px">Execution</td>
+        <td style="padding:3px 5px;border:1px solid #ccc;font-weight:bold;font-size:9px;border-left:3px solid ${d.color}">${d.label}</td>
+        <td style="padding:3px 5px;border:1px solid #ccc;color:#666;font-size:9px">${d.part}</td>
+        <td style="padding:3px 5px;border:1px solid #ccc;text-align:center;font-weight:bold">${s.total}</td>
+        <td style="padding:3px 5px;border:1px solid #ccc;text-align:center;font-weight:bold;color:#1565c0">${s.has}</td>
+        <td style="padding:3px 5px;border:1px solid #ccc;text-align:center;color:#1565c0;font-size:9px">${pct}%</td>
+        <td style="padding:3px 5px;border:1px solid #ccc;text-align:center;font-size:9px">${hasPctOfTotal}%</td>
+        <td style="padding:3px 5px;border:1px solid #ccc;text-align:center;font-weight:bold;font-size:10px">${ratio}%</td>
+      </tr>`;
+    }
+  }
+  document.getElementById('progBody').innerHTML = rows;
+
+  const totalPct = totalAll > 0 ? Math.round(hasAll/totalAll*100) : 0;
+  document.getElementById('progFoot').innerHTML = `<tr style="background:#1a1a3e;color:#fff;font-weight:bold">
+    <td colspan="3" style="padding:5px 6px;border:1px solid #444"></td>
+    <td style="padding:5px 6px;border:1px solid #444;text-align:center">${totalAll}</td>
+    <td style="padding:5px 6px;border:1px solid #444;text-align:center">${hasAll}</td>
+    <td style="padding:5px 6px;border:1px solid #444;text-align:center;color:#ff0">${totalPct}%</td>
+    <td style="padding:5px 6px;border:1px solid #444;text-align:center">100%</td>
+    <td style="padding:5px 6px;border:1px solid #444;text-align:center">${totalAll > 0 ? (hasAll/totalAll*100).toFixed(1) : 0}%</td>
+  </tr>`;
+
+  drawProgressDonut(DISC, stats, totalAll, hasAll);
+}
+
+function drawProgressDonut(DISC, stats, totalAll, hasAll, selectedKey) {
+  const canvas = document.getElementById('progChart');
+  if (!canvas) return;
+  const cssW = 440, cssH = 360;
+  const ctx = setupHiDPI(canvas, cssW, cssH);
+  const W = cssW, H = cssH;
+  const cx = W/2, cy = H/2;
+  ctx.clearRect(0,0,W,H);
+  if (totalAll === 0) return;
+
+  // Ring radii: inner=detail(PM split), mid=discipline(실적/목표), outer=본부(thin)
+  const detR = [50, 88], discR = [88, 130], divR = [132, 152];
+
+  const DIVS = [
+    {key:'ge', label:'GE본부', color:'#2e7d32', children:['ct','eng']},
+    {key:'plant', label:'플랜트부문', color:'#1565c0', children:['pm_cost','pm_sched','pm_coord','const','qhse']},
+    {key:'proc_div', label:'조달본부', color:'#ff9800', children:['proc']},
+  ];
+  const DETAIL = [
+    {key:'ct', label:'1. CT', color:'#4a148c', disc:'ct'},
+    {key:'eng', label:'3. Eng', color:'#b8860b', disc:'eng'},
+    {key:'pm_cost', label:'2.1 Cost', color:'#1565c0', disc:'pm'},
+    {key:'pm_sched', label:'2.2 Sched', color:'#1976d2', disc:'pm'},
+    {key:'pm_coord', label:'2.3 Coord', color:'#2196f3', disc:'pm'},
+    {key:'const', label:'5. Const', color:'#d84315', disc:'const'},
+    {key:'qhse', label:'6. Q-HSE', color:'#6a1b9a', disc:'qhse'},
+    {key:'proc', label:'4. Proc', color:'#ff9800', disc:'proc'},
+  ];
+
+  const orderedKeys = [];
+  for (const d of DISC) {
+    if (d.key === 'pm') orderedKeys.push('pm_cost','pm_sched','pm_coord');
+    else orderedKeys.push(d.key);
+  }
+
+  // Outer ring slices (detail)
+  let angle = -Math.PI/2;
+  const detSlices = [];
+  for (const key of orderedKeys) {
+    const s = stats[key];
+    const frac = s.total / totalAll;
+    const det = DETAIL.find(d => d.key === key);
+    if (!det || frac <= 0) continue;
+    detSlices.push({...det, frac, startA:angle, endA:angle+frac*Math.PI*2, stat:s});
+    angle += frac * Math.PI * 2;
+  }
+
+  // Middle ring (discipline)
+  const discSlices = [];
+  for (const d of DISC) {
+    const childKeys = d.key === 'pm' ? ['pm_cost','pm_sched','pm_coord'] : [d.key];
+    const children = detSlices.filter(s => childKeys.includes(s.key));
+    if (children.length === 0) continue;
+    discSlices.push({...d, startA:children[0].startA, endA:children[children.length-1].endA, frac:children.reduce((s,c)=>s+c.frac,0)});
+  }
+
+  // Inner ring (division)
+  const divSlices = [];
+  for (const dv of DIVS) {
+    const children = detSlices.filter(s => dv.children.includes(s.key));
+    if (children.length === 0) continue;
+    divSlices.push({...dv, startA:children[0].startA, endA:children[children.length-1].endA, frac:children.reduce((s,c)=>s+c.frac,0)});
+  }
+
+  const pmSubs = ['pm_cost','pm_sched','pm_coord'];
+  function isSel(key, ring) {
+    if (!selectedKey) return false;
+    if (key === selectedKey) return true;
+    if (ring === 'det') return (selectedKey === 'pm' && pmSubs.includes(key));
+    if (ring === 'disc') return (pmSubs.includes(selectedKey) && key === 'pm');
+    if (ring === 'div') {
+      const dv = DIVS.find(d => d.key === key);
+      if (!dv) return false;
+      if (dv.children.includes(selectedKey)) return true;
+      if (selectedKey === 'pm') return dv.children.some(c => pmSubs.includes(c));
+      return false;
+    }
+    return false;
+  }
+
+  // Draw inner ring (본부)
+  for (const sl of divSlices) {
+    const sel = isSel(sl.key, 'div');
+    ctx.beginPath();
+    ctx.arc(cx, cy, divR[1], sl.startA, sl.endA);
+    ctx.arc(cx, cy, divR[0], sl.endA, sl.startA, true);
+    ctx.closePath();
+    ctx.fillStyle = sl.color;
+    ctx.globalAlpha = selectedKey && !sel ? 0.2 : 0.85;
+    ctx.fill(); ctx.globalAlpha = 1;
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+  }
+
+  // Draw middle ring - background (목표, light) - no ring boundary stroke
+  for (const sl of discSlices) {
+    const sel = isSel(sl.key, 'disc');
+    ctx.beginPath();
+    ctx.arc(cx, cy, discR[1], sl.startA, sl.endA);
+    ctx.arc(cx, cy, discR[0], sl.endA, sl.startA, true);
+    ctx.closePath();
+    ctx.fillStyle = sl.color;
+    ctx.globalAlpha = selectedKey && !sel ? 0.1 : 0.35;
+    ctx.fill(); ctx.globalAlpha = 1;
+  }
+
+  // Draw middle ring - foreground (실적, solid)
+  for (const sl of discSlices) {
+    const sel = isSel(sl.key, 'disc');
+    const s = stats[sl.key];
+    const hasFrac = s.total > 0 ? s.has / s.total : 0;
+    const sliceAngle = sl.endA - sl.startA;
+    const hasEndA = sl.startA + sliceAngle * hasFrac;
+    if (hasFrac > 0) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, discR[1]-1, sl.startA, hasEndA);
+      ctx.arc(cx, cy, discR[0]+1, hasEndA, sl.startA, true);
+      ctx.closePath();
+      const grad = ctx.createRadialGradient(cx, cy, discR[0], cx, cy, discR[1]);
+      grad.addColorStop(0, sl.color);
+      grad.addColorStop(1, lighten(sl.color, 25));
+      ctx.fillStyle = grad;
+      ctx.globalAlpha = selectedKey && !sel ? 0.2 : 1;
+      ctx.fill(); ctx.globalAlpha = 1;
+    }
+  }
+  // Radial dividers only
+  for (let i = 0; i < discSlices.length; i++) {
+    const a = discSlices[i].startA;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(a)*detR[0], cy + Math.sin(a)*detR[0]);
+    ctx.lineTo(cx + Math.cos(a)*discR[1], cy + Math.sin(a)*discR[1]);
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+  }
+
+  // Draw inner ring (detail/PM split) - no ring boundary stroke
+  for (const sl of detSlices) {
+    const sel = isSel(sl.key, 'det');
+    ctx.beginPath();
+    ctx.arc(cx, cy, detR[1], sl.startA, sl.endA);
+    ctx.arc(cx, cy, detR[0], sl.endA, sl.startA, true);
+    ctx.closePath();
+    ctx.fillStyle = lighten(sl.color, 40);
+    ctx.globalAlpha = selectedKey && !sel ? 0.15 : 0.85;
+    ctx.fill(); ctx.globalAlpha = 1;
+  }
+  // Radial dividers for PM sub-parts only
+  for (const sl of detSlices) {
+    if (sl.disc !== 'pm') continue;
+    const a = sl.startA;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(a)*detR[0], cy + Math.sin(a)*detR[0]);
+    ctx.lineTo(cx + Math.cos(a)*detR[1], cy + Math.sin(a)*detR[1]);
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
+  }
+
+  // Label system: inside if fits, outside with leader line if not
+  const placedBoxes2 = [];
+  function overlaps2(bx, by, bw, bh) {
+    for (const p of placedBoxes2) {
+      if (bx-bw/2 < p.x+p.w/2 && bx+bw/2 > p.x-p.w/2 && by-bh/2 < p.y+p.h/2 && by+bh/2 > p.y-p.h/2) return true;
+    }
+    return false;
+  }
+  function addBox2(bx, by, bw, bh) { placedBoxes2.push({x:bx, y:by, w:bw, h:bh}); }
+
+  function drawRotText2(lx, ly, midA, lines, font, alpha, strokeW) {
+    let rot = midA + Math.PI/2;
+    while (rot > Math.PI) rot -= 2*Math.PI;
+    while (rot < -Math.PI) rot += 2*Math.PI;
+    if (rot > Math.PI/2 || rot < -Math.PI/2) rot += Math.PI;
+    ctx.save();
+    ctx.translate(lx, ly);
+    ctx.rotate(rot);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = font; ctx.globalAlpha = alpha;
+    ctx.fillStyle = '#fff'; ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = strokeW;
+    const step = lines.length > 1 ? 11 : 0;
+    const sy = -(step * (lines.length - 1)) / 2;
+    for (let i = 0; i < lines.length; i++) {
+      ctx.strokeText(lines[i], 0, sy + i * step);
+      ctx.fillText(lines[i], 0, sy + i * step);
+    }
+    ctx.globalAlpha = 1; ctx.restore();
+  }
+
+  function labelInside2(midA, labelR, lines, font, alpha, strokeW) {
+    const lx = cx + Math.cos(midA) * labelR;
+    const ly = cy + Math.sin(midA) * labelR;
+    ctx.font = font;
+    const tw = Math.max(...lines.map(l => ctx.measureText(l).width));
+    const th = lines.length * 12;
+    if (!overlaps2(lx, ly, tw+4, th+2)) {
+      addBox2(lx, ly, tw+4, th+2);
+      drawRotText2(lx, ly, midA, lines, font, alpha, strokeW);
+      return true;
+    }
+    return false;
+  }
+
+  function labelOutside2(midA, color, lines, font, alpha, strokeW) {
+    ctx.font = font;
+    const tw = Math.max(...lines.map(l => ctx.measureText(l).width));
+    const th = lines.length * 12;
+    for (let d = 30; d <= 60; d += 10) {
+      const ex = cx + Math.cos(midA) * (divR[1] + d);
+      const ey = cy + Math.sin(midA) * (divR[1] + d);
+      if (!overlaps2(ex, ey, tw+4, th+2)) {
+        addBox2(ex, ey, tw+4, th+2);
+        const sx = cx + Math.cos(midA) * (divR[1] + 2);
+        const sy = cy + Math.sin(midA) * (divR[1] + 2);
+        ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey);
+        ctx.strokeStyle = color; ctx.lineWidth = 0.8; ctx.globalAlpha = alpha; ctx.stroke();
+        ctx.globalAlpha = 1;
+        ctx.save();
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.font = font; ctx.globalAlpha = alpha;
+        ctx.fillStyle = '#333'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+        const step = lines.length > 1 ? 11 : 0;
+        const startY = -(step * (lines.length - 1)) / 2;
+        for (let i = 0; i < lines.length; i++) {
+          ctx.strokeText(lines[i], ex, ey + startY + i * step);
+          ctx.fillText(lines[i], ex, ey + startY + i * step);
+        }
+        ctx.globalAlpha = 1; ctx.restore();
+        return;
+      }
+    }
+  }
+
+  // Labels - middle ring
+  for (const sl of discSlices) {
+    const sel = isSel(sl.key, 'disc');
+    const midA = (sl.startA + sl.endA) / 2;
+    const labelR = (discR[0] + discR[1]) / 2 + 2;
+    const txt1 = sl.label.split('[')[0].split('(')[0].trim();
+    const txt2 = (sl.frac*100).toFixed(1)+'%';
+    const font = sel ? 'bold 10px Malgun Gothic' : 'bold 8px Malgun Gothic';
+    const alpha = selectedKey && !sel ? 0.3 : 1;
+    if (!labelInside2(midA, labelR, [txt1, txt2], font, alpha, 2)) {
+      labelOutside2(midA, sl.color, [txt1, txt2], font, alpha, 2);
+    }
+  }
+
+  // Labels - inner ring (PM sub-parts)
+  for (const sl of detSlices) {
+    if (sl.disc !== 'pm') continue;
+    const midA = (sl.startA + sl.endA) / 2;
+    const labelR = (detR[0] + detR[1]) / 2;
+    const alpha = selectedKey && !isSel(sl.key,'det') ? 0.3 : 1;
+    if (!labelInside2(midA, labelR, [sl.label], 'bold 7px Malgun Gothic', alpha, 1.5)) {
+      labelOutside2(midA, sl.color, [sl.label], 'bold 7px Malgun Gothic', alpha, 1.5);
+    }
+  }
+
+  // Labels - outer ring (본부)
+  for (const sl of divSlices) {
+    const midA = (sl.startA + sl.endA) / 2;
+    const labelR = (divR[0] + divR[1]) / 2;
+    const alpha = selectedKey && !isSel(sl.key,'div') ? 0.3 : 1;
+    if (!labelInside2(midA, labelR, [sl.label], 'bold 7px Malgun Gothic', alpha, 1.5)) {
+      labelOutside2(midA, sl.color, [sl.label], 'bold 7px Malgun Gothic', alpha, 1.5);
+    }
+  }
+
+  // Center text
+  const pct = Math.round(hasAll/totalAll*100);
+  ctx.font = 'bold 11px Malgun Gothic'; ctx.fillStyle = '#666';
+  ctx.fillText('실적 / 목표', cx, cy - 16);
+  ctx.font = 'bold 20px Malgun Gothic'; ctx.fillStyle = '#c00';
+  ctx.fillText(`${hasAll} / ${totalAll}`, cx, cy + 6);
+  ctx.font = 'bold 13px Malgun Gothic'; ctx.fillStyle = '#1a1a3e';
+  ctx.fillText(`${pct}%`, cx, cy + 26);
+
+  // Legend
+  let legend = '';
+  for (const sl of discSlices) {
+    const sel = isSel(sl.key, 'disc');
+    const s = stats[sl.key];
+    const p = s.total > 0 ? Math.round(s.has/s.total*100) : 0;
+    legend += `<span onclick="selectDisc('${sl.key}')" style="display:inline-flex;align-items:center;gap:3px;margin:1px 4px;cursor:pointer;opacity:${selectedKey && !sel ? 0.4 : 1};${sel?'font-weight:bold;text-decoration:underline':''}"><span style="width:10px;height:10px;background:${sl.color};border-radius:2px;display:inline-block"></span>${sl.label.split('[')[0].trim()} ${p}%</span>`;
+  }
+  document.getElementById('progLegend').innerHTML = legend;
+}
+
+function lighten(hex, pct) {
+  let r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  r = Math.min(255, r + pct); g = Math.min(255, g + pct); b = Math.min(255, b + pct);
+  return '#' + [r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+
+// ========== DASHBOARD INTERACTION ==========
+function selectDisc(key) {
+  // Toggle: click same again to deselect
+  if (_selectedDisc === key) { _selectedDisc = null; } else { _selectedDisc = key; }
+
+  // Highlight rows in both tables
+  document.querySelectorAll('#dashBody tr[data-disc], #progBody tr[data-disc]').forEach(function(tr) {
+    tr.style.background = (tr.getAttribute('data-disc') === _selectedDisc) ? '#d4c5f0' : '';
+  });
+
+  // Redraw both charts with highlight
+  if (_DISC && _actCount) drawDonut(_DISC, _actCount, _totalAct, _selectedDisc);
+  if (_progDISC && _progStats) drawProgressDonut(_progDISC, _progStats, _progTotalAll, _progHasAll, _selectedDisc);
+
+  // Show/hide selection bar
+  const bar = document.getElementById('selBar');
+  if (_selectedDisc) {
+    const allDisc = _DISC || _progDISC || [];
+    const found = allDisc.find(function(d) { return d.key === _selectedDisc; });
+    document.getElementById('selBarText').textContent = found ? found.label : _selectedDisc;
+    bar.style.display = 'block';
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+function goToWorkflow() {
+  if (!_selectedDisc) return;
+  // Switch to workflow page
+  document.querySelectorAll('.page-section').forEach(function(el) { el.classList.remove('active'); });
+  document.getElementById('page-workflow').classList.add('active');
+  document.querySelectorAll('#page-nav .tab').forEach(function(el) { el.classList.remove('active'); });
+  document.querySelectorAll('#page-nav .tab')[1].classList.add('active');
+
+  // Map disc key to column header class
+  const keyMap = {ct:'dh-ct', eng:'dh-eng', pm:'dh-pm', pm_cost:'dh-pm', pm_sched:'dh-pm', pm_coord:'dh-pm', const:'dh-const', proc:'dh-proc', qhse:'dh-qhse'};
+  const cls = keyMap[_selectedDisc];
+  if (cls) {
+    // Find and highlight the column header
+    const headers = document.querySelectorAll('th.dh');
+    headers.forEach(function(th) {
+      th.style.outline = '';
+      th.style.outlineOffset = '';
+    });
+    const target = document.querySelector('th.' + cls);
+    if (target) {
+      target.style.outline = '3px solid #ff0';
+      target.style.outlineOffset = '-2px';
+      target.scrollIntoView({behavior:'smooth', block:'center', inline:'center'});
+      // Flash effect
+      setTimeout(function() { target.style.outline = '4px solid #c00'; }, 500);
+      setTimeout(function() { target.style.outline = '3px solid #ff0'; }, 1000);
+      setTimeout(function() { target.style.outline = ''; }, 4000);
+    }
+  }
+}
+
+// ========== LOGIN & PAGE NAVIGATION ==========
+const _U = {id:'mfc', pw:'mfc2026'};
+
+function doLogin() {
+  const id = document.getElementById('login-id').value.trim();
+  const pw = document.getElementById('login-pw').value;
+  if (id === _U.id && pw === _U.pw) {
+    sessionStorage.setItem('loggedIn', id);
+    showMain(id);
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+    document.getElementById('login-pw').value = '';
+    document.getElementById('login-pw').focus();
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('loggedIn');
+  document.getElementById('main-content').style.display = 'none';
+  document.getElementById('login-overlay').style.display = 'flex';
+  document.getElementById('login-id').value = '';
+  document.getElementById('login-pw').value = '';
+  document.getElementById('login-error').style.display = 'none';
+  document.getElementById('login-id').focus();
+}
+
+function showMain(userId) {
+  document.getElementById('login-overlay').style.display = 'none';
+  document.getElementById('main-content').style.display = 'block';
+  document.getElementById('nav-user').textContent = userId;
+}
+
+function switchPage(page) {
+  document.querySelectorAll('.page-section').forEach(function(el) { el.classList.remove('active'); });
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('#page-nav .tab').forEach(function(el) { el.classList.remove('active'); });
+  event.target.classList.add('active');
+}
+
+// Enter key triggers login
+document.getElementById('login-pw').addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+document.getElementById('login-id').addEventListener('keydown', function(e) { if (e.key === 'Enter') { document.getElementById('login-pw').focus(); } });
+
+// Auto-login if session exists
+(function() {
+  const s = sessionStorage.getItem('loggedIn');
+  if (s) showMain(s);
+  else document.getElementById('login-id').focus();
+})();
+</script>
+</body>
+</html>
