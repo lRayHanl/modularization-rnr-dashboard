@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GS E&C · Module Portal</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0;
+      -webkit-user-select: none; user-select: none; }
+  body {
+    font-family: 'Malgun Gothic', 'Segoe UI', sans-serif;
+    background: url('Modularization_Flow.png') center top/cover no-repeat fixed;
+    color: #C8D6E5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ═══ Auth Gate ═══ */
+  #auth-gate {
+    position: fixed; inset: 0;
+    background: url('Modularization_Flow.png') center/cover no-repeat, linear-gradient(135deg, #0d1b3d, #1a3d7c);
+    z-index: 99999;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #auth-gate::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: rgba(11, 20, 38, 0.55);
+    backdrop-filter: blur(3px);
+  }
+  #auth-gate.hidden { display: none; }
+  #auth-gate input { -webkit-user-select: text !important; user-select: text !important; }
+  .auth-box {
+    position: relative;
+    z-index: 1;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    padding: 40px 50px;
+    width: 420px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    text-align: center;
+  }
+  .auth-box h2 { color: #fff; margin: 0 0 6px; font-size: 22px; }
+  .auth-box .auth-sub { color: rgba(255,255,255,0.7); font-size: 12px; margin-bottom: 22px; }
+  .auth-box input {
+    width: 100%; padding: 12px 14px; margin-bottom: 12px;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.12);
+    border-radius: 6px; color: #fff; font-size: 14px;
+    font-family: inherit; outline: none;
+  }
+  .auth-box input::placeholder { color: rgba(255,255,255,0.5); }
+  .auth-box input:focus { border-color: #ffb300; background: rgba(255,255,255,0.18); }
+  .auth-box button {
+    width: 100%; padding: 12px;
+    background: #ffb300; color: #1a3d7c; border: none;
+    border-radius: 6px; font-size: 15px; font-weight: 700;
+    cursor: pointer; font-family: inherit;
+  }
+  .auth-box button:hover { background: #ffc107; }
+  #auth-err { margin-top: 14px; min-height: 18px; color: #ff5252; font-size: 12px; font-weight: 700; }
+  .auth-footer {
+    margin-top: 20px; padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.55); font-size: 10.5px; line-height: 1.6;
+  }
+  .auth-footer .warn { color: #ffab00; font-weight: 700; }
+
+  /* ═══ Portal Main ═══ */
+  .portal-header {
+    text-align: center;
+    padding: 60px 20px 30px;
+    background: linear-gradient(180deg, rgba(17,29,53,0.85) 0%, rgba(11,20,38,0.7) 100%);
+  }
+  .portal-header h1 {
+    font-size: 32px; font-weight: 900; color: #fff;
+    letter-spacing: 1px; margin-bottom: 6px;
+  }
+  .portal-header .sub {
+    font-size: 14px; color: #6B7FA3;
+  }
+  .portal-cards {
+    display: flex;
+    gap: 28px;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 40px 20px 60px;
+    max-width: 1000px;
+    margin: 0 auto;
+    flex: 1;
+  }
+  .portal-card {
+    position: relative;
+    width: 420px;
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.25s, box-shadow 0.25s;
+    text-decoration: none;
+    color: inherit;
+    border: 1px solid rgba(0,212,255,0.1);
+    background: rgba(17,29,53,0.85);
+    backdrop-filter: blur(20px);
+  }
+  .portal-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    border-color: rgba(0,212,255,0.3);
+  }
+  .portal-card .card-img {
+    width: 100%; height: 200px;
+    object-fit: cover;
+    display: block;
+    border-bottom: 2px solid rgba(0,212,255,0.15);
+  }
+  .portal-card .card-body {
+    padding: 20px 24px 24px;
+  }
+  .portal-card .card-badge {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .badge-blue { background: rgba(66,165,245,0.2); color: #42a5f5; border: 1px solid rgba(66,165,245,0.3); }
+  .badge-cyan { background: rgba(0,212,255,0.15); color: #00D4FF; border: 1px solid rgba(0,212,255,0.3); }
+  .portal-card h3 {
+    font-size: 20px; font-weight: 800; color: #fff;
+    margin-bottom: 8px; line-height: 1.3;
+  }
+  .portal-card p {
+    font-size: 12.5px; color: #6B7FA3; line-height: 1.6;
+  }
+  .portal-card .card-arrow {
+    position: absolute;
+    right: 20px; bottom: 20px;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(0,212,255,0.1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: #00D4FF;
+    transition: background 0.2s;
+  }
+  .portal-card:hover .card-arrow { background: rgba(0,212,255,0.25); }
+
+  .portal-footer {
+    text-align: center;
+    padding: 20px;
+    color: #3B4F6B;
+    font-size: 11px;
+    border-top: 1px solid rgba(0,212,255,0.06);
+  }
+
+  /* Print block */
+  @media print { body > * { display: none !important; } }
+</style>
+<script>
+  // Pre-auth hide
+  (function(){
+    try {
+      if (sessionStorage.getItem('mod-rnr-auth') !== 'ok') {
+        var s = document.createElement('style');
+        s.id = 'pre-auth-hide';
+        s.textContent = 'body > *:not(#auth-gate) { visibility: hidden !important; }';
+        document.head.appendChild(s);
+      }
+    } catch(e){}
+  })();
+</script>
+</head>
+<body>
+
+<!-- ═══ Auth Gate ═══ -->
+<div id="auth-gate">
+  <div class="auth-box">
+    <h2>🔒 Module Portal</h2>
+    <div class="auth-sub">GS E&C · Modularization R&R Dashboard · 인증 필요</div>
+    <form id="auth-form" onsubmit="return doAuth(event)" autocomplete="off">
+      <input type="text"     id="auth-user" placeholder="User ID"  required>
+      <input type="password" id="auth-pass" placeholder="Password" required>
+      <button type="submit">🔑 로그인</button>
+    </form>
+    <div id="auth-err"></div>
+    <div class="auth-footer">
+      <span class="warn">⚠ 본 문서는 사내 참조용이며 복제·배포가 금지됩니다.</span><br>
+      무단 캡쳐·공유 시 책임이 따릅니다. · GS E&C
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Portal Main ═══ -->
+<div class="portal-header">
+  <h1>🏗️ Modularization Portal</h1>
+  <div class="sub">GS E&C · Module Project R&R · Workflow · Procedure</div>
+</div>
+
+<div class="portal-cards">
+
+  <!-- Card 1: R&R Dashboard -->
+  <a class="portal-card" href="Modularization_RnR_ITC_by_Discipline.html">
+    <img src="module_transport_bg.png" class="card-img" alt="R&R Dashboard" draggable="false">
+    <div class="card-body">
+      <span class="card-badge badge-blue">R&R Dashboard</span>
+      <h3>Modularization R&R<br>통합 대시보드</h3>
+      <p>
+        ITC 기준 견적/수행/출하 R&R 매트릭스 · ModuleWorkFlow (TBU) 2025 ·
+        SPMT 시뮬레이션 · 인터랙티브 워크플로우 · 대시보드
+      </p>
+    </div>
+    <div class="card-arrow">→</div>
+  </a>
+
+  <!-- Card 2: Module 적용 절차 -->
+  <a class="portal-card" href="Module 적용 절차 초안.html">
+    <div class="card-img" style="background:linear-gradient(135deg,#1B3A6B,#0B1426);display:flex;align-items:center;justify-content:center;">
+      <span style="font-size:60px;">📋</span>
+    </div>
+    <div class="card-body">
+      <span class="card-badge badge-cyan">Procedure Guide</span>
+      <h3>모듈 적용 절차서<br>통합 가이드</h3>
+      <p>
+        MDC 구성 및 R&R · MDG 타임라인 · Gate 1/2/3 상세 분석 ·
+        입찰 프로세스 절차서 + MDG 매핑 · 산출물 요약
+      </p>
+    </div>
+    <div class="card-arrow">→</div>
+  </a>
+
+  <!-- Card 3: Lessons Learned -->
+  <a class="portal-card" href="lessons_learned_dashboard.html">
+    <div class="card-img" style="background:linear-gradient(135deg,#0d1117,#182030);display:flex;align-items:center;justify-content:center;">
+      <span style="font-size:60px;">📊</span>
+    </div>
+    <div class="card-body">
+      <span class="card-badge" style="background:rgba(240,165,0,0.15);color:#f0a500;border:1px solid rgba(240,165,0,0.3);">Lessons Learned</span>
+      <h3>Module Lessons Learned<br>Dashboard</h3>
+      <p>
+        MFC Project · Modularization 경험 데이터 ·
+        이슈 분석 · 개선 사항 · 프로젝트 피드백 종합
+      </p>
+    </div>
+    <div class="card-arrow">→</div>
+  </a>
+
+  <!-- Card 4: MFC PAR Module 백서 -->
+  <a class="portal-card" href="Module_Work_Flow_Ontology.html">
+    <div class="card-img" style="background:linear-gradient(135deg,#1a1a3e,#2c2c54);display:flex;align-items:center;justify-content:center;">
+      <span style="font-size:60px;">🗂️</span>
+    </div>
+    <div class="card-body">
+      <span class="card-badge" style="background:rgba(255,215,0,0.15);color:#ffd700;border:1px solid rgba(255,215,0,0.3);">백서 Ontology</span>
+      <h3>MFC PAR Module<br>Workflow 백서</h3>
+      <p>
+        Module Project Workflow · Ontology & Document Management ·
+        FEED/Execution Phase · 산출물 체계 · 문서 관리
+      </p>
+    </div>
+    <div class="card-arrow">→</div>
+  </a>
+
+</div>
+
+<div class="portal-footer">
+  GS E&C · Modularization R&R Portal · Internal Use Only · 2026
+</div>
+
+<!-- ═══ Auth + Protection Scripts ═══ -->
+<script>
+window.AUTH_HASHES = [
+  'c4dc3fe9c9fe8173c7645fed9f4f83f7f1a37fced165830e1bf2690c044b2f38'  // RayHan:Modularization
+];
+
+async function sha256Hex(str) {
+  var buf = new TextEncoder().encode(str);
+  var hash = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hash))
+    .map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+}
+
+async function doAuth(evt) {
+  if (evt) evt.preventDefault();
+  var u = (document.getElementById('auth-user').value||'').trim();
+  var p = document.getElementById('auth-pass').value||'';
+  var err = document.getElementById('auth-err');
+  err.textContent = '';
+  if (!u || !p) { err.textContent = 'ID와 비밀번호를 모두 입력하세요.'; return false; }
+  try {
+    var h = await sha256Hex(u + ':' + p);
+    if (window.AUTH_HASHES.indexOf(h) !== -1) {
+      sessionStorage.setItem('mod-rnr-auth', 'ok');
+      document.getElementById('auth-gate').classList.add('hidden');
+      var hide = document.getElementById('pre-auth-hide');
+      if (hide) hide.remove();
+    } else {
+      err.textContent = '❌ 잘못된 ID 또는 비밀번호';
+      document.getElementById('auth-pass').value = '';
+    }
+  } catch(e) { err.textContent = '암호화 모듈 오류'; }
+  return false;
+}
+
+// Auto-unlock if session valid
+(function(){
+  try {
+    if (sessionStorage.getItem('mod-rnr-auth') === 'ok') {
+      document.getElementById('auth-gate').classList.add('hidden');
+      var h = document.getElementById('pre-auth-hide');
+      if (h) h.remove();
+    } else {
+      var u = document.getElementById('auth-user');
+      if (u) u.focus();
+    }
+  } catch(e){}
+})();
+
+// Content protection
+document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+document.addEventListener('selectstart', function(e){ if(e.target.tagName!=='INPUT') e.preventDefault(); });
+document.addEventListener('dragstart', function(e){ e.preventDefault(); });
+document.addEventListener('keydown', function(e){
+  var k = (e.key||'').toLowerCase();
+  if (e.target && (e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')) return;
+  if (e.key==='F12') { e.preventDefault(); return; }
+  if ((e.ctrlKey||e.metaKey) && ['c','x','a','s','p','u'].indexOf(k)!==-1) { e.preventDefault(); return; }
+  if ((e.ctrlKey||e.metaKey) && e.shiftKey && ['i','j','c'].indexOf(k)!==-1) { e.preventDefault(); return; }
+});
+</script>
+</body>
+</html>
