@@ -814,5 +814,24 @@ if(sessionStorage.getItem('sub-auth-ok')==='1')document.getElementById('sub-auth
         }, 400);
     }
 </script>
+
+<!-- ═══ Content Protection ═══ -->
+<style>
+  * { -webkit-user-select: none; user-select: none; }
+  input, textarea { -webkit-user-select: text !important; user-select: text !important; }
+  @media print { body > * { display: none !important; } }
+</style>
+<script>
+document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+document.addEventListener('selectstart', function(e){ if(e.target.tagName!=='INPUT'&&e.target.tagName!=='TEXTAREA') e.preventDefault(); });
+document.addEventListener('dragstart', function(e){ e.preventDefault(); });
+document.addEventListener('keydown', function(e){
+  var k = (e.key||'').toLowerCase();
+  if (e.target && (e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')) return;
+  if (e.key==='F12') { e.preventDefault(); return; }
+  if ((e.ctrlKey||e.metaKey) && ['c','x','a','s','p','u'].indexOf(k)!==-1) { e.preventDefault(); return; }
+  if ((e.ctrlKey||e.metaKey) && e.shiftKey && ['i','j','c'].indexOf(k)!==-1) { e.preventDefault(); return; }
+});
+</script>
 </body>
 </html>
