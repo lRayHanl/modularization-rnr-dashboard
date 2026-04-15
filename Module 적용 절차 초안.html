@@ -817,21 +817,48 @@ if(sessionStorage.getItem('sub-auth-ok')==='1')document.getElementById('sub-auth
 
 <!-- ═══ Content Protection ═══ -->
 <style>
-  * { -webkit-user-select: none; user-select: none; }
-  input, textarea { -webkit-user-select: text !important; user-select: text !important; }
+  *, *::before, *::after {
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+    -webkit-touch-callout: none !important;
+  }
+  input, textarea {
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
+    user-select: text !important;
+  }
   @media print { body > * { display: none !important; } }
 </style>
 <script>
-document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
-document.addEventListener('selectstart', function(e){ if(e.target.tagName!=='INPUT'&&e.target.tagName!=='TEXTAREA') e.preventDefault(); });
-document.addEventListener('dragstart', function(e){ e.preventDefault(); });
+['copy','cut','paste'].forEach(function(ev){
+  document.addEventListener(ev, function(e){
+    if (e.target && (e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')) return;
+    e.preventDefault(); e.stopPropagation();
+    if (e.clipboardData) e.clipboardData.setData('text/plain','');
+    return false;
+  }, true);
+});
+document.addEventListener('contextmenu', function(e){ e.preventDefault(); }, true);
+document.addEventListener('selectstart', function(e){ if(e.target.tagName!=='INPUT'&&e.target.tagName!=='TEXTAREA') e.preventDefault(); }, true);
+document.addEventListener('dragstart', function(e){ e.preventDefault(); }, true);
 document.addEventListener('keydown', function(e){
   var k = (e.key||'').toLowerCase();
   if (e.target && (e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')) return;
   if (e.key==='F12') { e.preventDefault(); return; }
-  if ((e.ctrlKey||e.metaKey) && ['c','x','a','s','p','u'].indexOf(k)!==-1) { e.preventDefault(); return; }
+  if ((e.ctrlKey||e.metaKey) && ['c','x','a','s','p','u','v'].indexOf(k)!==-1) { e.preventDefault(); return; }
   if ((e.ctrlKey||e.metaKey) && e.shiftKey && ['i','j','c'].indexOf(k)!==-1) { e.preventDefault(); return; }
 });
+// Periodically clear clipboard if user manages to copy
+setInterval(function(){
+  try {
+    if (document.hasFocus() && navigator.clipboard && navigator.clipboard.writeText) {
+      // Only clear if text content looks like it came from this page
+    }
+  } catch(e){}
+}, 500);
 </script>
 </body>
 </html>
