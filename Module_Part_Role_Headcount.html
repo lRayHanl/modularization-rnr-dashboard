@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script>try{if(sessionStorage.getItem('mod-rnr-auth')!=='ok')window.location.href='index.html';}catch(e){window.location.href='index.html';}</script>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module Part · Role & Headcount</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0;
+      -webkit-user-select: none !important; user-select: none !important;
+      -webkit-touch-callout: none !important; }
+  input, textarea { -webkit-user-select: text !important; user-select: text !important; }
+  body {
+    font-family: 'Malgun Gothic', 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #0B1426 0%, #111D35 50%, #0d1b3d 100%);
+    color: #C8D6E5;
+    min-height: 100vh;
+    padding-bottom: 60px;
+  }
+  @media print { body > * { display: none !important; } }
+
+  /* ═══ Sub-Auth Gate ═══ */
+  #sub-auth-gate {
+    position: fixed; inset: 0;
+    background: linear-gradient(135deg, #0d1b3d, #1a3d7c);
+    z-index: 99999;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #sub-auth-gate.hidden { display: none; }
+  .sub-auth-box {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    padding: 40px 50px;
+    width: 420px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .sub-auth-box h2 { color: #fff; margin-bottom: 6px; font-size: 22px; }
+  .sub-auth-box .sub-auth-desc { color: rgba(255,255,255,0.7); font-size: 12px; margin-bottom: 22px; }
+  .sub-auth-box input {
+    width: 100%; padding: 12px 14px; margin-bottom: 12px;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.12);
+    border-radius: 6px; color: #fff; font-size: 14px;
+    outline: none; font-family: inherit;
+  }
+  .sub-auth-box input::placeholder { color: rgba(255,255,255,0.5); }
+  .sub-auth-box input:focus { border-color: #00D4FF; background: rgba(255,255,255,0.18); }
+  .sub-auth-box button {
+    width: 100%; padding: 12px;
+    background: #00D4FF; color: #0d1b3d; border: none;
+    border-radius: 6px; font-size: 15px; font-weight: 700;
+    cursor: pointer; font-family: inherit;
+  }
+  .sub-auth-box button:hover { background: #33ddff; }
+  #sub-auth-err { margin-top: 12px; color: #ff5252; font-size: 12px; font-weight: 700; min-height: 16px; }
+
+  /* ═══ Top Nav ═══ */
+  .top-nav {
+    background: rgba(11,20,38,0.95);
+    border-bottom: 2px solid rgba(0,212,255,0.2);
+    padding: 12px 28px;
+    display: flex; align-items: center; gap: 16px;
+    position: sticky; top: 0; z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+  .top-nav a {
+    background: #ff8f00; color: #fff;
+    padding: 6px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .top-nav a:hover { background: #ffa726; }
+  .top-nav .title { color: #00D4FF; font-size: 14px; font-weight: 700; letter-spacing: 0.5px; }
+  .top-nav .meta { color: #6B7FA3; font-size: 11px; margin-left: auto; }
+
+  /* ═══ Hero ═══ */
+  .hero {
+    text-align: center;
+    padding: 50px 20px 30px;
+    background: linear-gradient(180deg, rgba(17,29,53,0.7) 0%, transparent 100%);
+  }
+  .hero h1 { font-size: 30px; font-weight: 900; color: #fff; margin-bottom: 8px; letter-spacing: 1px; }
+  .hero .sub { font-size: 14px; color: #6B7FA3; margin-bottom: 18px; }
+  .hero .source { color: #00D4FF; font-size: 12px; }
+
+  /* ═══ Layout ═══ */
+  .container { max-width: 1280px; margin: 0 auto; padding: 0 20px; }
+  .section {
+    margin-top: 32px;
+    background: rgba(17,29,53,0.6);
+    border: 1px solid rgba(0,212,255,0.15);
+    border-radius: 12px;
+    padding: 28px 30px;
+    backdrop-filter: blur(20px);
+  }
+  .section h2 {
+    color: #00D4FF;
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0,212,255,0.2);
+    letter-spacing: 0.5px;
+  }
+  .section h2 .num {
+    display: inline-block;
+    background: linear-gradient(135deg, #00D4FF, #0099cc);
+    color: #0B1426; width: 28px; height: 28px;
+    text-align: center; line-height: 28px;
+    border-radius: 6px; margin-right: 10px;
+    font-size: 13px; font-weight: 900;
+  }
+
+  /* ═══ KPI Cards ═══ */
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 24px;
+  }
+  .kpi-card {
+    background: linear-gradient(135deg, rgba(0,212,255,0.08), rgba(66,165,245,0.05));
+    border: 1px solid rgba(0,212,255,0.25);
+    border-radius: 10px;
+    padding: 18px 16px;
+    text-align: center;
+  }
+  .kpi-card .label { font-size: 11px; color: #6B7FA3; letter-spacing: 0.5px; text-transform: uppercase; }
+  .kpi-card .value { font-size: 32px; font-weight: 900; color: #fff; margin: 6px 0 4px; }
+  .kpi-card .value.danger { color: #ff5252; }
+  .kpi-card .value.warn { color: #ffab00; }
+  .kpi-card .value.success { color: #66bb6a; }
+  .kpi-card .desc { font-size: 11px; color: #8B9BB3; }
+
+  /* ═══ Role Categories ═══ */
+  .role-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+  .role-cat {
+    background: rgba(13,27,61,0.6);
+    border-radius: 10px;
+    padding: 16px;
+    border-top: 3px solid #00D4FF;
+  }
+  .role-cat.b { border-top-color: #ff8f00; }
+  .role-cat.c { border-top-color: #66bb6a; }
+  .role-cat h3 {
+    font-size: 15px; color: #fff; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .role-cat .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    background: rgba(0,212,255,0.2);
+    color: #00D4FF;
+  }
+  .role-cat.b .badge { background: rgba(255,143,0,0.2); color: #ff8f00; }
+  .role-cat.c .badge { background: rgba(102,187,106,0.2); color: #66bb6a; }
+  .role-cat ul { list-style: none; }
+  .role-cat li {
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    background: rgba(11,20,38,0.6);
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.5;
+    border-left: 2px solid rgba(0,212,255,0.3);
+  }
+  .role-cat li .rid { color: #00D4FF; font-weight: 700; margin-right: 6px; }
+  .role-cat.b li .rid { color: #ff8f00; }
+  .role-cat.c li .rid { color: #66bb6a; }
+  .role-cat li .rname { color: #fff; font-weight: 600; }
+  .role-cat li .rdesc { color: #8B9BB3; font-size: 11px; display: block; margin-top: 2px; }
+
+  /* ═══ Matrix Table ═══ */
+  .matrix-wrap { overflow-x: auto; }
+  table.matrix {
+    width: 100%; border-collapse: collapse; font-size: 12px;
+  }
+  table.matrix th, table.matrix td {
+    padding: 10px 8px;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  table.matrix thead th {
+    background: rgba(0,212,255,0.15);
+    color: #00D4FF;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.3px;
+  }
+  table.matrix th.role-col {
+    text-align: left; padding-left: 14px;
+    background: rgba(255,143,0,0.12);
+    color: #ff8f00;
+    width: 240px;
+  }
+  table.matrix td.role-col {
+    text-align: left; padding-left: 14px;
+    color: #fff; font-weight: 600;
+  }
+  table.matrix td.role-col .desc { color: #8B9BB3; font-size: 10.5px; font-weight: 400; display: block; margin-top: 1px; }
+  table.matrix tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+  table.matrix tr:hover td { background: rgba(0,212,255,0.05); }
+  .lvl-l { color: #00D4FF; font-size: 16px; font-weight: 900; }
+  .lvl-s { color: #66bb6a; font-size: 14px; }
+  .lvl-p { color: #ffab00; font-size: 14px; }
+  .lvl-x { color: #444; }
+
+  /* ═══ Org Compare ═══ */
+  .org-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .org-card {
+    background: rgba(13,27,61,0.6);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+  }
+  .org-card.asis { border: 1px solid rgba(255,82,82,0.3); }
+  .org-card.future { border: 1px solid rgba(102,187,106,0.3); }
+  .org-card h3 { color: #fff; margin-bottom: 12px; font-size: 14px; }
+  .org-card.asis h3 { color: #ff8a8a; }
+  .org-card.future h3 { color: #a5d6a7; }
+  .org-card img { width: 100%; border-radius: 6px; }
+  .org-card .note {
+    font-size: 11px; color: #8B9BB3; margin-top: 10px; padding: 8px;
+    background: rgba(11,20,38,0.6); border-radius: 6px; line-height: 1.6;
+    text-align: left;
+  }
+  .org-card.asis .note .key { color: #ff8a8a; font-weight: 700; }
+  .org-card.future .note .key { color: #66bb6a; font-weight: 700; }
+
+  /* ═══ Cost Save ═══ */
+  .cost-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px; }
+  .cost-item {
+    background: linear-gradient(135deg, rgba(102,187,106,0.1), rgba(102,187,106,0.05));
+    border: 1px solid rgba(102,187,106,0.3);
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+  }
+  .cost-item .amount { color: #66bb6a; font-size: 22px; font-weight: 900; margin-bottom: 4px; }
+  .cost-item .label { color: #fff; font-size: 12px; font-weight: 700; }
+  .cost-item .desc { color: #8B9BB3; font-size: 10.5px; margin-top: 4px; line-height: 1.4; }
+  .cost-total {
+    margin-top: 14px;
+    padding: 16px;
+    background: linear-gradient(90deg, rgba(102,187,106,0.2), rgba(0,212,255,0.1));
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid rgba(102,187,106,0.4);
+  }
+  .cost-total .total-amt { color: #66bb6a; font-size: 32px; font-weight: 900; }
+  .cost-total .total-lbl { color: #fff; font-size: 13px; margin-top: 4px; }
+
+  /* ═══ Action Items ═══ */
+  .actions ul { list-style: none; }
+  .actions li {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    background: rgba(13,27,61,0.6);
+    border-radius: 8px;
+    border-left: 4px solid #00D4FF;
+  }
+  .actions li.p1 { border-left-color: #ff5252; }
+  .actions li.p2 { border-left-color: #ffab00; }
+  .actions li.p3 { border-left-color: #66bb6a; }
+  .actions .pri {
+    font-size: 11px; font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(0,212,255,0.2);
+    color: #00D4FF;
+  }
+  .actions li.p1 .pri { background: rgba(255,82,82,0.2); color: #ff5252; }
+  .actions li.p2 .pri { background: rgba(255,171,0,0.2); color: #ffab00; }
+  .actions li.p3 .pri { background: rgba(102,187,106,0.2); color: #66bb6a; }
+  .actions .desc { color: #fff; font-size: 13px; flex: 1; }
+
+  /* ═══ Headcount Comparison ═══ */
+  .hc-bars { display: flex; align-items: flex-end; gap: 30px; padding: 30px 0; justify-content: center; }
+  .hc-bar { text-align: center; }
+  .hc-bar .bar-fill {
+    width: 80px;
+    background: linear-gradient(180deg, #00D4FF, #0099cc);
+    border-radius: 6px 6px 0 0;
+    margin: 0 auto;
+    position: relative;
+    transition: all 0.3s;
+  }
+  .hc-bar.danger .bar-fill { background: linear-gradient(180deg, #ff5252, #b71c1c); }
+  .hc-bar.warn .bar-fill { background: linear-gradient(180deg, #ffab00, #f57c00); }
+  .hc-bar.good .bar-fill { background: linear-gradient(180deg, #66bb6a, #2e7d32); }
+  .hc-bar .num {
+    position: absolute; top: -28px; left: 50%; transform: translateX(-50%);
+    font-size: 22px; font-weight: 900; color: #fff;
+  }
+  .hc-bar .label { color: #fff; font-size: 13px; font-weight: 700; margin-top: 8px; }
+  .hc-bar .sub { color: #8B9BB3; font-size: 11px; }
+
+  /* Footer */
+  .doc-footer {
+    text-align: center;
+    padding: 30px 20px 10px;
+    color: #3B4F6B;
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ Sub-Auth Gate ═══ -->
+<div id="sub-auth-gate">
+  <div class="sub-auth-box">
+    <h2>🔐 Module Part Dashboard</h2>
+    <div class="sub-auth-desc">Role & Headcount Review · 추가 인증 필요</div>
+    <form id="sub-auth-form" onsubmit="return doSubAuth(event)" autocomplete="off">
+      <input type="text"     id="sub-auth-user" placeholder="User ID"  required>
+      <input type="password" id="sub-auth-pass" placeholder="Password" required>
+      <button type="submit">🔑 인증</button>
+    </form>
+    <div id="sub-auth-err"></div>
+  </div>
+</div>
+
+<!-- ═══ Top Nav ═══ -->
+<div class="top-nav">
+  <a href="index.html">🏠 Portal</a>
+  <span class="title">📋 Module Part · Role Definition & Headcount Review</span>
+  <span class="meta">Source: Module 업무 수행안 (2025-O&G)_R9.pdf · 27p</span>
+</div>
+
+<!-- ═══ Hero ═══ -->
+<div class="hero">
+  <h1>🏗️ Module Part 역할 정의 및 인력 검토</h1>
+  <div class="sub">PDF 기반 75개 업무 R&R 분석 · 조직도 매핑 · 최소 필요 인력 산정</div>
+  <div class="source">기준 문서 · O&G 사업팀 · 2025년 작성 R9</div>
+</div>
+
+<div class="container">
+
+  <!-- ═══ Section: KPI ═══ -->
+  <div class="section">
+    <h2><span class="num">①</span>핵심 지표 (Key Indicators)</h2>
+    <div class="kpis">
+      <div class="kpi-card">
+        <div class="label">기존 Module Team</div>
+        <div class="value">8</div>
+        <div class="desc">2018년 운영 (현재 대부분 이직)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="label">현재 운영 인원</div>
+        <div class="value danger">1</div>
+        <div class="desc">⚠️ 1人 한계 (87.5% 감소)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="label">최소 필요 인원</div>
+        <div class="value warn">3</div>
+        <div class="desc">사업+공사+설계 각 1명</div>
+      </div>
+      <div class="kpi-card">
+        <div class="label">FGIP Cost Save 실적</div>
+        <div class="value success">20억+</div>
+        <div class="desc">철골/Jacking/SPMT 등 (p.26)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Section: Headcount Bars ═══ -->
+  <div class="section">
+    <h2><span class="num">②</span>인력 추이 비교</h2>
+    <div class="hc-bars">
+      <div class="hc-bar good">
+        <div class="bar-fill" style="height: 240px;">
+          <span class="num">8</span>
+        </div>
+        <div class="label">2018년</div>
+        <div class="sub">기존 Module Team</div>
+      </div>
+      <div class="hc-bar danger">
+        <div class="bar-fill" style="height: 30px;">
+          <span class="num">1</span>
+        </div>
+        <div class="label">현재 (2025)</div>
+        <div class="sub">운영 한계</div>
+      </div>
+      <div class="hc-bar warn">
+        <div class="bar-fill" style="height: 90px;">
+          <span class="num">3</span>
+        </div>
+        <div class="label">최소 필요</div>
+        <div class="sub">사업+공사+설계</div>
+      </div>
+      <div class="hc-bar good">
+        <div class="bar-fill" style="height: 150px;">
+          <span class="num">3+α</span>
+        </div>
+        <div class="label">권장 모델</div>
+        <div class="sub">3인 + Module Mgr + 외주</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Section: Role Definition ═══ -->
+  <div class="section">
+    <h2><span class="num">③</span>Module Part 역할 정의 (Role Definition)</h2>
+    <div class="role-grid">
+      <div class="role-cat a">
+        <h3>📋 A. 견적/Proposal 단계 <span class="badge">6 ROLES</span></h3>
+        <ul>
+          <li><span class="rid">A1</span><span class="rname">Module Feasibility Study</span><span class="rdesc">지역/제작사/계약방식 검토 · Module Solutions 제안</span></li>
+          <li><span class="rid">A2</span><span class="rname">MDA Analysis</span><span class="rdesc">Aramco ITB 등 Modular Design Assessment</span></li>
+          <li><span class="rid">A3</span><span class="rname">Module List 작성</span><span class="rdesc">모듈화 대상 식별 · Mark-up P&ID</span></li>
+          <li><span class="rid">A4</span><span class="rname">T&I Study</span><span class="rdesc">운송/설치 기본검토 · Module Envelope</span></li>
+          <li><span class="rid">A5</span><span class="rname">3D Simulation</span><span class="rdesc">운송/인양 사전 시뮬레이션 (3D Scan)</span></li>
+          <li><span class="rid">A6</span><span class="rname">Cost-Benefit 분석</span><span class="rdesc">BM/BQ 산정 · 외주비 검토</span></li>
+        </ul>
+      </div>
+      <div class="role-cat b">
+        <h3>🛠 B. 실행(Execution) 단계 <span class="badge">6 ROLES</span></h3>
+        <ul>
+          <li><span class="rid">B1</span><span class="rname">Module Manager</span><span class="rdesc">Project별 Module 공사 총괄 (Site Unit Mgr + 운송)</span></li>
+          <li><span class="rid">B2</span><span class="rname">Module 운송설계</span><span class="rdesc">Motion/Lifting/Stress Analysis</span></li>
+          <li><span class="rid">B3</span><span class="rname">T&I Technical Support</span><span class="rdesc">UOP/제작사/운송사 Coordination</span></li>
+          <li><span class="rid">B4</span><span class="rname">공사성 Temporary 설계</span><span class="rdesc">Loading Beam · SPMT/Crane Arrange</span></li>
+          <li><span class="rid">B5</span><span class="rname">현장 출장 지원</span><span class="rdesc">Load Out · Lifting 입회</span></li>
+          <li><span class="rid">B6</span><span class="rname">Site Trouble Shooting</span><span class="rdesc">제작/운송/설치 현장 이슈 대응</span></li>
+        </ul>
+      </div>
+      <div class="role-cat c">
+        <h3>📚 C. Team 유지/축적 <span class="badge">5 ROLES</span></h3>
+        <ul>
+          <li><span class="rid">C1</span><span class="rname">백서/Lessons Learned</span><span class="rdesc">MFC/Y2C 경험 DB화</span></li>
+          <li><span class="rid">C2</span><span class="rname">Workflow/표준문서</span><span class="rdesc">절차서 · Module Design Guideline</span></li>
+          <li><span class="rid">C3</span><span class="rname">Fabricator DB</span><span class="rdesc">거점 제작사 발굴/평가</span></li>
+          <li><span class="rid">C4</span><span class="rname">Frame Work Agreement</span><span class="rdesc">연단가 협력사(CAD/구조해석) 운영</span></li>
+          <li><span class="rid">C5</span><span class="rname">R&D / 신기술</span><span class="rdesc">OSC · Digital Twin · BIM · Crane Manager</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Section: Org Compare ═══ -->
+  <div class="section">
+    <h2><span class="num">④</span>조직도 비교 (As-Is vs Future)</h2>
+    <div class="org-compare">
+      <div class="org-card asis">
+        <h3>📕 As-Is (2017 모델)</h3>
+        <img src="모듈조직도_As_Is_But.png" alt="As-Is 조직도" draggable="false">
+        <div class="note">
+          <span class="key">⚠️ 한계:</span> Gray Area 존재 · EM팀 견적 위주 → 실행 전환 시 R&R 모호<br>
+          <span class="key">구성:</span> Module Manager 1 + 사업/설계/공사 ≈ 6~10명
+        </div>
+      </div>
+      <div class="org-card future">
+        <h3>📗 Future (To-Be 모델)</h3>
+        <img src="모듈조직도_future_O.png" alt="Future 조직도" draggable="false">
+        <div class="note">
+          <span class="key">✅ 장점:</span> Full-Time + Shared 명확 · Module Coordinator 직속<br>
+          <span class="key">핵심 Full-Time:</span> Structural · Piping · Vendor Data Expediting
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Section: Role × Person Matrix ═══ -->
+  <div class="section">
+    <h2><span class="num">⑤</span>역할 × 인원 매트릭스 (3인 + 외주 모델)</h2>
+    <div class="matrix-wrap">
+    <table class="matrix">
+      <thead>
+        <tr>
+          <th class="role-col">Role</th>
+          <th>사업 출신<br>(1명)</th>
+          <th>공사 출신<br>(1명)</th>
+          <th>설계 출신<br>(1명)</th>
+          <th>외주<br>(Frame Work)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="role-col">A1. Feasibility Study<span class="desc">Module Solutions 제안</span></td><td><span class="lvl-l">◎</span></td><td><span class="lvl-s">○</span></td><td><span class="lvl-s">○</span></td><td><span class="lvl-x">—</span></td></tr>
+        <tr><td class="role-col">A2. MDA Analysis<span class="desc">Modular Design Assessment</span></td><td><span class="lvl-l">◎</span></td><td><span class="lvl-x">—</span></td><td><span class="lvl-s">○</span></td><td><span class="lvl-x">—</span></td></tr>
+        <tr><td class="role-col">A3. Module List<span class="desc">Mark-up P&ID</span></td><td><span class="lvl-s">○</span></td><td><span class="lvl-s">○</span></td><td><span class="lvl-l">◎</span></td><td><span class="lvl-x">—</span></td></tr>
+        <tr><td class="role-col">A4. T&I Study<span class="desc">운송/설치 기본검토</span></td><td><span class="lvl-s">○</span></td><td><span class="lvl-l">◎</span></td><td><span class="lvl-s">○</span></td><td><span class="lvl-p">△</span></td></tr>
+        <tr><td class="role-col">A5. 3D Simulation<span class="desc">3D Max · Crane Sim.</span></td><td><span class="lvl-x">—</span></td><td><span class="lvl-s">○</span></td><td><span class="lvl-s">○</span></td><td><span class="lvl-l">◎</span></td></tr>
+        <tr><td class="role-col">A6. Cost-Benefit<span class="desc">BM/BQ 산정</span></td><td><span class="lvl-l">◎</span></td><td><span class="lvl-s">○</span></td><td><span class="lvl-x">—</span></td><td><span class="lvl-x">—</span></td></tr>
+        <tr><td class="role-col">B1. Module Manager<span class="desc">Project 총괄</span></td><td><span class="lvl-x">—</span></td><td><span class="lvl-l">◎</span></td><td><span class="lvl-x">—</span></td><td><span class="lvl-x">—</span></td></tr>
+        <tr><td class="role-col">B2. 운송 설계<span class="desc">Motion/Stress Analysis</span></td><td><span class="lvl-x">—</span></td><td><span class="lvl-s">○</span></td><td><span class="lvl-l">◎</span></td><td><span class="lvl-l">◎</span></td></tr>
+        <tr><td class="role-col">B3. T&I Tech Support<span class="desc">제작사/운송사 Coord.</span></td><td><span class="lvl-s">○</span></td><td><span class="lvl-l">◎</span></td><td><span class="lvl-s">○</span></td><td><span class="lvl-x">—</span></td></tr>
+        <tr><td class="role-col">B4. Temporary 설계<span class="desc">Loading Beam · SPMT</span></td><td><span class="lvl-x">—</span></td><td><span class="lvl-l">◎</span></td><td><span class="lvl-s">○</span></td><td><span class="lvl-l">◎</span></td></tr>
+        <tr><td class="role-col">B5. 현장 출장<span class="desc">Load Out · Lifting</span></td><td><span class="lvl-s">○</span></td><td><span class="lvl-l">◎</span></td><td><span class="lvl-s">○</span></td><td><span class="lvl-x">—</span></td></tr>
+        <tr><td class="role-col">B6. Trouble Shooting<span class="desc">현장 이슈 대응</span></td><td><span class="lvl-l">◎</span></td><td><span class="lvl-l">◎</span></td><td><span class="lvl-l">◎</span></td><td><span class="lvl-x">—</span></td></tr>
+        <tr><td class="role-col">C1~C5. Team 유지<span class="desc">백서 · DB · 표준</span></td><td><span class="lvl-l">◎</span></td><td><span class="lvl-s">○</span></td><td><span class="lvl-s">○</span></td><td><span class="lvl-p">△</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div style="margin-top:14px;font-size:12px;color:#8B9BB3;display:flex;gap:24px;">
+      <span><span class="lvl-l">◎</span> Lead</span>
+      <span><span class="lvl-s">○</span> Support</span>
+      <span><span class="lvl-p">△</span> 부분 참여</span>
+      <span><span class="lvl-x">—</span> 미관여</span>
+    </div>
+  </div>
+
+  <!-- ═══ Section: Cost Save ═══ -->
+  <div class="section">
+    <h2><span class="num">⑥</span>FGIP Cost Save 실증 (PDF p.26)</h2>
+    <div class="cost-grid">
+      <div class="cost-item">
+        <div class="amount">2억</div>
+        <div class="label">철골 보강 절감</div>
+        <div class="desc">1'st Tier 보강 → Loading Beam 사용</div>
+      </div>
+      <div class="cost-item">
+        <div class="amount">4억</div>
+        <div class="label">Jacking System</div>
+        <div class="desc">미사용으로 운송 Cost 절감</div>
+      </div>
+      <div class="cost-item">
+        <div class="amount">5억</div>
+        <div class="label">SPMT 사용</div>
+        <div class="desc">사용일수 절반 이하로 감축</div>
+      </div>
+      <div class="cost-item">
+        <div class="amount">12억+</div>
+        <div class="label">Footing 최적화</div>
+        <div class="desc">Steel Stool + Plate → Footing 활용</div>
+      </div>
+    </div>
+    <div class="cost-total">
+      <div class="total-amt">최소 20억+ Cost Save</div>
+      <div class="total-lbl">경쟁사 대비 Module 적용 Cost 절감 (FGIP 사례) · 3인 인건비 ROI 충분 확보</div>
+    </div>
+  </div>
+
+  <!-- ═══ Section: Action Items ═══ -->
+  <div class="section actions">
+    <h2><span class="num">⑦</span>Action Items (Strategic Decision)</h2>
+    <ul>
+      <li class="p1"><span class="pri">P1</span><span class="desc">사업 1명 + 공사 1명 + 설계 1명 즉시 충원 (경력/사내모집/신입)</span></li>
+      <li class="p1"><span class="pri">P1</span><span class="desc">외주 연단가 협력사 (유심/템즈 등) Frame Work Agreement 체결</span></li>
+      <li class="p2"><span class="pri">P2</span><span class="desc">Module Manager 후보 Pool 확보 (Project별 별도 선임 가능)</span></li>
+      <li class="p2"><span class="pri">P2</span><span class="desc">75개 업무 R&R Detail 정의 → 절차서 등록 (Gray Area 제거)</span></li>
+      <li class="p3"><span class="pri">P3</span><span class="desc">Module 백서 / Lessons Learned 체계적 DB화 (Notion 진행 중)</span></li>
+      <li class="p3"><span class="pri">P3</span><span class="desc">Strategic Module 선별 적용 (전부 모듈화 비현실적, 선택과 집중)</span></li>
+    </ul>
+  </div>
+
+  <div class="doc-footer">
+    GS E&C · O&G 사업팀 · Module Part Role & Headcount Review · Internal Use Only · 2026
+  </div>
+</div>
+
+<!-- ═══ Auth Script ═══ -->
+<script>
+const _SUB_HASH = '1ba7e9226fa19275af643dfadff5bc7f0740692f9c4d24ce3a617fdc794b2f37';
+async function sha256Hex(str) {
+  var buf = new TextEncoder().encode(str);
+  var hash = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hash))
+    .map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+}
+async function doSubAuth(evt) {
+  if (evt) evt.preventDefault();
+  var u = (document.getElementById('sub-auth-user').value||'').trim();
+  var p = document.getElementById('sub-auth-pass').value||'';
+  var err = document.getElementById('sub-auth-err');
+  err.textContent = '';
+  if (!u || !p) { err.textContent = 'ID와 비밀번호를 모두 입력하세요.'; return false; }
+  try {
+    var h = await sha256Hex(u + ':' + p);
+    if (h === _SUB_HASH) {
+      sessionStorage.setItem('mod-rnr-sub', 'ok');
+      document.getElementById('sub-auth-gate').classList.add('hidden');
+    } else {
+      err.textContent = '❌ 잘못된 ID 또는 비밀번호';
+      document.getElementById('sub-auth-pass').value = '';
+    }
+  } catch(e) { err.textContent = '암호화 모듈 오류'; }
+  return false;
+}
+(function(){
+  if (sessionStorage.getItem('mod-rnr-sub') === 'ok') {
+    document.getElementById('sub-auth-gate').classList.add('hidden');
+  } else {
+    var u = document.getElementById('sub-auth-user');
+    if (u) u.focus();
+  }
+})();
+</script>
+
+<!-- ═══ Content Protection ═══ -->
+<script>
+['copy','cut','paste'].forEach(function(ev){
+  document.addEventListener(ev, function(e){
+    if (e.target && (e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')) return;
+    e.preventDefault(); e.stopPropagation();
+    if (e.clipboardData) e.clipboardData.setData('text/plain','');
+    return false;
+  }, true);
+});
+document.addEventListener('contextmenu', function(e){ e.preventDefault(); }, true);
+document.addEventListener('selectstart', function(e){ if(e.target.tagName!=='INPUT'&&e.target.tagName!=='TEXTAREA') e.preventDefault(); }, true);
+document.addEventListener('dragstart', function(e){ e.preventDefault(); }, true);
+document.addEventListener('keydown', function(e){
+  var k = (e.key||'').toLowerCase();
+  if (e.target && (e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')) return;
+  if (e.key==='F12') { e.preventDefault(); return; }
+  if ((e.ctrlKey||e.metaKey) && ['c','x','a','s','p','u','v'].indexOf(k)!==-1) { e.preventDefault(); return; }
+  if ((e.ctrlKey||e.metaKey) && e.shiftKey && ['i','j','c'].indexOf(k)!==-1) { e.preventDefault(); return; }
+});
+</script>
+</body>
+</html>
